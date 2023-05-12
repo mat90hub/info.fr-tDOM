@@ -1,0 +1,515 @@
+@c -*- coding: utf-8-unix; mode: texinfo; mode: auto-fill; ispell-local-dictionary: "fr_FR" -*-
+@c typographie française :    «   » … ’
+
+
+@c Usage nodeObj <method> <args>, where method can be:
+@c     nodeType                     
+@c     nodeName                     
+@c     nodeValue ?newValue?         
+@c     hasChildNodes                
+@c     childNodes                   
+@c     childNodesLive               
+@c     parentNode                   
+@c     firstChild ?nodeObjVar?      
+@c     lastChild ?nodeObjVar?       
+@c     nextSibling ?nodeObjVar?     
+@c     previousSibling ?nodeObjVar? 
+@c     hasAttribute attrName        
+@c     getAttribute attrName ?defaultValue? 
+@c     setAttribute attrName value ?attrName value ...? 
+@c     removeAttribute attrName     
+@c     hasAttributeNS uri localName 
+@c     getAttributeNS uri localName ?defaultValue? 
+@c     setAttributeNS uri attrName value ?attrName value ...? 
+@c     removeAttributeNS uri attrName 
+@c     attributes ?attrNamePattern?   
+@c     attributeNames ?attrNamePattern?   
+@c     appendChild new              
+@c     insertBefore new ref         
+@c     replaceChild new old         
+@c     removeChild child            
+@c     cloneNode ?-deep?            
+@c     ownerDocument                
+@c     getElementsByTagName name    
+@c     getElementsByTagNameNS uri localname 
+@c     getElementById id            
+@c     find attrName attrValue ?nodeObjVar?   
+@c     child      number|all ?type? ?attrName attrValue? 
+@c     descendant number|all ?type? ?attrName attrValue? 
+@c     ancestor   number|all ?type? ?attrName attrValue? 
+@c     fsibling   number|all ?type? ?attrName attrValue? 
+@c     psibling   number|all ?type? ?attrName attrValue? 
+@c     root ?nodeObjVar?            
+@c     target                       
+@c     data                         
+@c     text                         
+@c     prefix                       
+@c     namespaceURI                 
+@c     getBaseURI                   
+@c     baseURI ?URI?                
+@c     localName                    
+@c     delete                       
+@c     getLine                      
+@c     getColumn                    
+@c     @<attrName> ?defaultValue?   
+@c     asList                       
+@c     asXML ?-indent <none,0..8>? ?-channel <channel>? ?-escapeNonASCII? ?-escapeAllQuot? ?-doctypeDeclaration <boolean>?
+@c     asHTML ?-channel <channelId>? ?-escapeNonASCII? ?-htmlEntities?
+@c     asText                       
+@c     asJSON ?-indent <none,0..8>? 
+@c     appendFromList nestedList    
+@c     appendFromScript script      
+@c     insertBeforeFromScript script ref 
+@c     appendXML xmlString          
+@c     selectNodes ?-namespaces prefixUriList? ?-cache <boolean>? xpathQuery ?typeVar? 
+@c     toXPath ?-legacy?            
+@c     disableOutputEscaping ?boolean? 
+@c     precedes node                
+@c     normalize ?-forXPath?        
+@c     xslt ?-parameters parameterList? <xsltDocNode>
+@c     jsonType ?jsonType?          
+@c     readlock                     
+@c     writelock                    
+
+
+@node Les instances nœuds
+@chapter Les instances nœuds
+
+@c https://docs.activestate.com/activetcl/8.6/tcl/tdom/domNode.html
+
+Manipule une instance nœeud pour un object @code{DOM}.
+
+@example
+$nodeObject method  arg arg ...
+@end example
+
+Cette commande manipule une instance particulière d'un objet nœud de la
+@code{DOM}. La @code{method} spécifie la méthode dans la classe du
+nœud. Ceci doit être en conformité avec les recommendations du W3C
+"Document Object Model (Core) Level 1"
+(http://www.w3.org/TR/REC-DOM-Level-1/level-one-core.html)
+
+Ces méthodes implémente le langage de chemin XML (XPath), version 1.0 du
+W3C (http://www.w3.org/TR/1999/REC-xpath-19991116) auquel on peut se
+référer pour plus de précision.
+
+
+Les méthodes valables sont :
+
+@table @code
+@item nodeType
+Renvoie le type de nœuds pour cet objet nœud. Ce peut être : ELEMENT_NODE,
+TEXT_NODE, CDATA_SECTION_NODE, COMMENT_NODE ou PROCESSING_INSTRUCTION_NODE.
+
+@item nodeName
+Retourne le nom du nœud de cet objet. Pour un nœud d'élément (type
+ELEMENT_NODE), c'est le nom, pour les scripts, la cible, @code{#text}
+pour les nœud texte, @code{#comment} pour les nœuds commentaire ou
+@code{#cdata} pour les nœuds de type cdata.
+
+@item nodeValue ?newValue?
+Retourne la valeur pour cet objet nœud. C'est le texte ou la donnée pour
+les nœuds du type TEXT_NODE, COMMENT_NODE, PROCESSING_INSTRUCTION_NODE
+ou CDATA_SECTION_NODE. Sinon, c'est la chaîne vide. Si le nœud est un
+TEXT_NODE, COMMENT_NODE ou PROCESSING_INSTRUCTION_NODE et qu'un argument
+optionel de nouvelle valeur est donné (@code{newValue}), le nœud est mis
+sur cette valeur.
+    
+@item hasChildNodes
+Retourne 1 si le nœud a des enfants, 0 sinon.
+
+@item parentNode ?objVar?
+Retourne le nœud parent.
+
+@item childNodes
+Retourne la liste de enfants directs de ce nœud.
+
+@item childNodesLive
+Retourne une liste "active" (ndt. "live") des enfants de ce nœud au sens
+de la recommendation DOM. Cette liste est "active" au sens que par
+exemple, tout changement d'un des enfants de ce nœud sera immédiatement
+reflété dans la liste des nœuds retournés. Les deux accesseurs connus
+par cet objet liste de nœuds sont @code{item <n>}, qui retourne le nième
+item de la collection, et @code{length}, qui retourne la nombre de nœuds
+dans la liste.
+
+@item firstChild ?objVar?
+Retourne le premier enfant de ce nœud.
+
+@item lastChild ?objVar?
+Retourne le dernier enfant de ce nœud.
+
+@item nextSibling ?objVar?
+Retourne le prochain frère jumeau (ndt. "sibling") par rapport au nœud
+courant. 
+
+@item previousSibling ?objVar?
+Retourne le frère jumeau antérieur.
+
+@item getElementsByTagName name
+Retourne une liste de tous les éléments dans le sous-arbre correspondant
+au nom (en utilisant le style global de reconnaissance).
+
+@item getElementsByTagNameNS uri localname
+Retourne une liste de tous les éléments dans le sous-arbre correspondant
+au nom (en utilisant le style global de reconnaissance) et dans l'espace
+de nom déterminé par @code{uri}.
+
+@item getElementById id
+Retourne le nœud ayant l'attribut @code{id} ou une chaîne vide.
+
+@item hasAttribute attributeName
+Retourne 1 si l'objet nœud contient un attribut @code{attributeName},
+sinon retourne 0.
+
+@item getAttribute attributeName ?defaultValue?
+Retourne la valeur de l'attribut @code{attributeName}. Si l'attribut
+n'est pas disponible, la valeur @code{defaultValue} est retournée.
+
+@item setAttribute attributeName newValue ?attributeName newValue ...?
+Règle la valeur d'un ou plusieurs attributs. Chaque attribut
+@code{attributeName} est mis à la valeur correspondante @code{newValue}.
+S'il n'y a pas d'attributs pour un ou plusieurs de ces noms, ceci crééra
+ces attributs.
+    
+@item removeAttribute attributeName
+Efface ces attibuts.
+
+@item hasAttributeNS uri localName
+Retourne 1 si cet objet contient un attribut avec le nom local
+@code{localName} dans l'espace de nom donné par @code{uri}, sinon
+retourne 0.
+
+@item getAttributeNS uri localName ?defaultValue?
+Retourne la valeur de l'attribut @code{localName} dans l'espace de nom
+@code{uri}. Si le nœud n'a pas d'attribut de ce nom, retourne @code{defaultValue}.
+
+@item setAttributeNS uri qualifiedName newValue ?uri qualifiedName newValue ...?
+Règle la valeur d'un ou plusieurs attributs dans l'espace de nom
+@code{uri}. Chaque attribut @code{attributeName} est mis à la valeur
+correspondante @code{newValue}.  S'il n'y a pas d'attributs pour un ou
+plusieurs de ces noms, ceci crééra ces attributs.
+
+Sur un exemple :
+@example
+$node setAttributeNS "http://some.uri.com/wow" prefix:attr1 attrValue
+@end example
+
+Si l'@code{uri} est la chaîne vide et que l'attribut n'a pas de préfixe,
+cette méthode a le même effet que la méthode @code{setAttribute}, comme
+sur l'exemple suivant :
+
+@example
+$node setAttributeNS "" attri "some Value"
+@end example
+
+Les nœuds de l'espace de nom XML ne sont dans aucun espace de nom, vous
+les régler de la façon suivante :
+
+@example
+$node setAttributeNS "" xmlns:myprefix "myNamespaceURI"
+$node setAttributeNS "" xmlns "newDefaultNamespace"
+@end example
+
+Si le nom @code{qualifiedName} a le préfixe @code{xml} et que vous donniez la chaîne
+vide pour l'@code{uri}, l'espace de nom sera attribué par défaut à
+"http://www.w3.org/XML/1998/namespace", comme le recommande la
+spécification DOM 2. Avec l'exception des préfixes spéciaux @code{xmlns}
+et @code{xml}, vous devrez toujours donner un @code{uri} non vide, si
+votre nom @code{qualifiedName} a un préfixe.
+
+
+@item removeAttributeNS uri localName
+Efface l'attribut avec le nom local @code{localName} dans l'espace de
+nom @code{uri}.
+
+@item attributes ?attributeNamePattern?
+Retourne tous les attributs correspondants au motif
+@code{attributeNamePattern}. Si ce motif n'est pas donnée, tous les
+attributs sont retournés sous la forme d'une liste Tcl.
+
+@item appendChild newChild
+Ajoute @code{newChild} à la fin de la list des enfants de ce nœud.
+
+@item insertBefore newChild refChild
+Insère le nouvel enfant @code{newChild} avant @code{refChild} dans liste
+des enfants de ce nœud. Si @code{refChild} est la chaîne vide, insère
+@code{newChild} à la fin de la liste des enfants de ce nœud.
+
+@item replaceChild newChild oldChild
+Remplace @code{oldChild} par @code{newChild} dans la liste des enfants
+de ce nœud. Le nœud @code{oldChild} fera parti de la liste des fragments
+de document après cette opération.
+
+@item removeChild child
+Enlève @code{child} de la liste des enfant de ce nœud et ce nœud fera
+parti de la liste des fragments de document après cette opération. Il
+n'est pas physiquement effacé.
+
+@item delete
+Efface ce nœud et tout l'arbre de ses enfant et libère la mémoire
+correspondante. Les nœuds concernés par cette opération ne sont plus
+accessible par la liste des fragments de ce document.
+
+@item cloneNode ?-deep?
+Clone ce nœud et l'ajoute dans la liste des fragments de document. Si
+l'option @code{-deep} est spécifiée, tous les nœuds descendants sont
+aussi clonés.
+
+@item ownerDocument ?domObjVar?
+Retourne l'objet document auquel ce nœud appartient.
+
+@item find attrName attrVal ?objVar?
+Trouve le nœud qui a l'attribut @code{attrName} et la valeur
+d'attribut @code {attrVal} dans le sous arbre démarrant au nœud courant
+ou donné par @code{objVar}.
+
+@item child number|all type attrName attrValue
+Pointeur (XPointer) enfant
+
+@item descendant number|all type attrName attrValue
+Pointeur (XPointer) descendant
+
+@item ancestor number|all type attrName attrValue
+Pointeur (XPointer) ascendant
+    
+@item fsibling number|all type attrName attrValue
+Pointeur (XPointer) jumeau (ndt. "fsibling")
+    
+@item psibling number|all type attrName attrValue
+Pointeur (XPointer) jumeau (ndt. "psibling")
+    
+@item root objVar
+Pointeur (XPointer) racine (ndt. "root")
+
+@item text
+Retourne tous les nœuds texte enant de ce nœud concaténés en une seule chaîne.
+
+@item target
+Pour les nœuds contenant des scripts, la partie cible est
+retournée. Sinon une erreur est générée.
+
+@item data
+Pour un nœud contnenant un script retourne la partie donnée. Pour un
+nœud texte, commendant ou cdata, la valeur est retournée. Sinon une
+erreur est générée.
+
+@item prefix
+Retourne le préfixe de l'espace de nom.
+
+@item namespaceURI
+Retourne l'@code{uri} de l'espace de nom.
+
+@item localName
+Retourne le nom local du nom de l'élémnent du nœuds donné.
+
+@item selectNodes ?-namespaces prefixUriList? ?-cache <boolean>? xpathQuery ?typeVar?
+Retourne le résultat d'une requète XPath @code{xpathQuery} au sous arbre
+attaché au nœud donné. Ceci peut être une valeur de chaîne, une liste de
+chaînes, une liste de nœuds ou une liste de paires nom d'attributs avec
+leurs valeurs. Si @code{typeVar} est donné, le résultat est stocké dans
+cette variable (chaîne vide, booléen, nombre, chaîne, nœuds, attributs
+de nœuds ou un mélange).
+
+L'argument @code{xpathQuery} doit être une expression XPath
+valide. Cependant, il y a une exception à cette règle. Les noms de
+variables Tcl peuvent apparaître dans l'expression XPath, à n'importe
+quelle position où il est légal selon les règles de la syntaxe XPath de
+mettre une variable XPath. Le nom de la variable est substitué par la
+valeur de la variable. En ignorant les règles de syntaxe d'XPath, le nom
+de la variable Tcl peut être n'importe quel nom légal de variable Tcl :
+variable locale, global, entrées d'un tableau (ndt. array entries) etc…
+
+L'option @code{-namespaces} attend une liste tcl avec des paires
+d'arguments préfixes / espace de noms. Si l'option n'est pas donnée,
+alors tout préfixe d'espace de noms dans l'expression XPath sera d'abord
+résolue par rapport à la liste des paires préfixes / espace de noms
+donnés par la méthode @code{selectNodesNamespaces} pour le document
+auquel le nom appartient. Si cela échoue, alors la définition de
+l'espace de noms dans le contexte du nœud sera utilisé pour interpreter
+le préfixe. Si cette option est donnée, n'importe quel préfixe d'espace
+de noms dans l'expression XPath sera d'abord interprété par rapport à la
+liste donnée (et en ignorant la liste globale des préfixes / espaces de
+noms du document). Si la liste relie le même préfixe à différents
+espaces de noms, alors la première relation l'emporte. Si cela échoue,
+alors la définition de l'espace de nom dans le scope du nœud sera
+utilisé pour interpréter le préfixe, comme d'habitude.
+
+
+If the @code{-cache} option is used with a true value, then the xpathQuery will
+be looked up in a document specific cache. If the query is found, then
+the stored pre-compiled query will be used. If the query isn't found, it
+will be pre-compiled and stored in the cache, for use in further
+calls. Please notice, that the xpathQuery as given as string is used as
+key for the cache. This means, that equal XPath expressions, which
+differ only in white space are treated as different cache
+entries. Special care is needed, if the XPath expression includes
+namespace prefixes. During pre-compilation, the prefixes will be
+resolved first to the prefix / namespace pairs of the -namespaces
+option, if given, and to the namespaces in scope of the context node at
+pre-compilation time. If the XPath is found in the cache, neither the
+-namespaces option nor the namespaces in scope of the context node will
+be taken in account but the already resolved (stored) namespaces will be
+used for the query.
+
+Examples
+
+@example
+set paragraphNodes [$node selectNodes @{chapter[3]//para[@@type='warning' or @@type='error'@} ]
+foreach paragraph $paragraphNodes @{
+  lappend  values [$paragraph selectNodes attribute::type]
+@}
+
+set doc [dom parse @{<doc xmlns="http://www.defaultnamespace.org"><child/></doc>@}]
+set root [$doc documentElement]
+set childNodes [$root selectNodes -namespaces @{default http://www.defaultnamespace.org@} default:child]
+@end example
+
+@item getLine
+Retourne le numéro de ligne de ce nœud dans le fichier XML original qui
+a été analysé.
+
+@item getColumn
+Retourne le numéro de colonne de ce nœud dans le fichier XML original qui
+a été analysé.
+
+@item asList
+Retourne le sous-arbre DOM comme une liste tcl imbriquée à partir du
+nœud courant.
+
+@item asXML ?-indent none/1..8? ?-channel channelId? ?-escapeNonASCII??-escapeAllQuot?
+Returns the DOM substree starting from the current node as the root node
+of the result as an (optional indented) XML string or sends the output
+directly to the given channelId. If the option -escapeNonASCII is given,
+every non 7 bit ASCII character in attribute values or element PCDATA
+content will be escaped as character reference in decimal
+representation. If the option -escapeAllQuot is given, quotation marks
+will be escaped with &quot; even in text content of elements.
+
+@item asHTML ?-channel channelId? ?-escapeNonASCII? ?-htmlEntities?
+Returns the DOM substree starting from the current node as the root node
+of the result serialized acording to HTML rules (HTML elements are
+recognized regardless of case, without end tags for emtpy HTML elements
+etc.), as string or sends the output directly to the given channelId. If
+the option -escapeNonASCII is given, every non 7 bit ASCII character in
+attribute values or element PCDATA content will be escaped as character
+reference in decimal representation. If the option -htmlEntities is
+given, a character is outputed using a HTML 4.01 character entity
+reference, if one is defined for it.
+
+@item asText
+Cette méthode renvoie toutes les valeurs chaînes des éléments de type
+@code{ELEMENT_NODE} descendant du nœud donné, dans l'ordre et sans aucun
+échappement. Pour tous les autres types de nœuds, cette méthode renvoir
+la valeur de chaîne XPath de ce nœud.
+
+@item appendFromList list
+Analyse la @code{list} et crée un sous-arbre DOM et l'attache au nœud en
+cours.
+
+@item appendFromScript tclScript
+Ajoute les nœuds crées par un script Tcl @code{tclScript}, qui aura bâti
+en utilisant la commande @code{dom createNodeCmd} pour le nœud donné.
+
+@item insertBeforeFromScript tclScript refChild
+Insert les nœuds crées par un script Tcl @code{tclScript}, qui aura bâti
+en utilisant lacommande @code{dom createNodeCmd} pour le nœud donné
+avant le nœud @code{refChild} dans la liste des nœuds enfants. Si
+@code{refChild} est la chaîne vide, le nouveau nœuds va être
+simplement ajouté.
+    
+@item appendXML XMLstring
+Analyse la chaîne @code{XMLstring}, crée le sous-arbre DOM correspondant
+et l'ajoute à l'arbre du nœud courant.
+
+@item simpleTranslate outputVar specifications
+Traduit le sous-arbre démarrant à ce nœud selon la spécification donnée
+dans @code{specifications} et renvoie le résultat dans la variable
+@code{outputVar}. La traduction est très semblable à au mode
+@code{Cost Simple}.
+
+@item toXPath
+Returns an XPath, which exactly addresses the given node in its
+document. This XPath is only valid as there are no changes to DOM tree
+made later one.
+
+@item getBaseURI
+Retourne la @code{baseURI} de ce nœud. Cette méthode est maintenant
+remplacée par la méthode @code{baseURI}.
+
+@item baseURI ?uri?
+Retourne la @code{baseURI} de ce nœud. Si l'argument optionel @code{uri}
+est donnée, règle la base @code{uro} de ce nœud et de tous ses enfants
+venant de la même entité à cet @code{uri}. 
+
+
+@item disableOutputEscaping ?boolean?
+Cette méthode ne fonctionne que pour les nœuds texte ; pour tous les
+autres nœud, cette méthode retourne une erreur. Sans l'argument booléen
+optionel, elle retourne si l'annulation des échappement sur les sorties
+est actif ou non. Une valeur retournée à 0 signifie, que les caractères
+du texte du nœud seront échappés pour générer du XML valide, si mis en
+série. C'est le comportement par defaut pour tous les nœuds texte
+analysés ou crées (avec l'exception des nœuds texte résultant d'une
+transformation XSLT, pour lesquels une désactivation des échappements a
+été spécialement demandée dans la transformation). Une valeur retournée
+à 1 signifie que les échappements sont désactivés pour ce nœud texte. Si
+un tel nœud est sérialisé (avec une méthode @code{asXML} pu
+@code{asHTML}), il est écrit littéralement sans échapper les caractères
+XML particuliers. Vous ne devriez pas mettre cet indicateur à 1, sauf si
+vous savez vraiment ce que vous faites. 
+
+@item  precedes refnode
+Compare l'ordre relatif du nœud avec @code{refnode}. Les deux nœuds
+doivent faire parti du même document et non de la liste des fragments du
+document. Retourne vraie (@code{t}), si le nœud est avant @code{refnode}
+dans l'ordre du document (au sens de le recommendation XPath 1.0), sinon
+la méthode retourne faut (@code{f}).
+
+@item normalize ?-forXPath?
+Puts all Text nodes in the full depth of the sub-tree underneath this
+Node into a "normal" form where only structure (e.g., elements,
+comments, processing instructions and CDATA sections) separates Text
+nodes, i.e., there are neither adjacent Text nodes nor empty Text
+nodes. If the option -forXPath is given, all CDATA sections in the nodes
+are converted to text nodes, as a first step before the normalization.
+
+@item xslt ?-parameters parameterList? ?-ignoreUndeclaredParameters? ?-xsltmessagecmd script? stylesheet ?outputVar?
+Applique une transformation XSLT sur le document en utilisant la feuille
+de style XSLT @code{stylesheet}, qui est elle même un document
+@code{domdoc}. Cette méthode retourne un objet document contenant le
+résultat de la transformation et la stocke dans la variable
+@code{outputVar} si elle est donnée.
+
+L'option @code{-parameters} règle le niveau @code{<xsl:param>} à des
+valeurs chaîne. Le liste @code{parameterList} doit être une liste tcl,
+consistant de paires de paramètres nom/valeur.
+
+Si l'option @code{-ignoreUndeclaredParameters} est donnée, alors les
+noms de paramètres @code{parameterList} donnés dans l'option
+@code{-parameters} qui ne sont pas déclaré comme des paramètres de plus
+haut niveau dans la feuille de style sont ingorés silencieusement. Sans
+cette option, une erreur est levée, si un utilisateur essaie de régler
+un paramèrre de haut niveau, qui n'est pas déclaré dans la feuille de
+style. 
+
+L'option @code{-xsltmessagecmd} règle un apple de retour pour les
+éléments @code{xslt:message} dans la feuille de style. La commande
+réelle est le scriptt donné en argument à cette option, ajoutée au
+fragment XML en instanciant le contenu de l'élément @code{xsl:message}
+comme un chaîne (comme si la fonction XPath @code{string()} aurait été
+appliquée au fragment XML) et un indicateur, qui détermine si le
+@code{xsl:message} a un attribut @code{terminate} avec la valeur
+@code{yes}. 
+
+    
+@item @@attrName
+Retourne la valeur de l'attribut @code{attrName}. Ceci est un raccourci
+pour @code{getAttribute}.
+
+@end table
+
+Sinon, si un nom inconnu de méthode est donné, la commande avec le même
+nom dans l'espace de nom ::dom::domNode est essayée. Ceci permet
+d'ajouter rapidement des méthodes au niveau de Tcl.
+

@@ -1,0 +1,178 @@
+@c -*- coding: utf-8-unix; mode: texinfo; mode: auto-fill; ispell-local-dictionary: "fr_FR" -*-
+@c typographie française :    «   » … ’
+
+@c On vérifie les dictionnaires diponibles avec la commande : hunspell -D
+
+
+\input texinfo
+
+@c %**start of header (This is for running Texinfo on a region.)
+@setfilename tdom.fr.info
+@documentlanguage fr_FR
+@documentencoding UTF-8
+
+@settitle Mes notes sur tDOM
+@c %**end of header (This is for running Texinfo on a region.)
+
+@paragraphindent 0
+
+@dircategory Programming
+@direntry
+* tDOM: (tdom.fr).           Traiter du xml avec tcl.
+@end direntry
+
+
+@set TITLE Notes glanées sur tDOM
+
+@set xref-automatic-section-title
+
+@iftex
+@set DOCUMENT article
+@set CHAPTER chapter
+@set SECTION section
+@end iftex
+
+@ifinfo
+@set DOCUMENT Info file
+@set CHAPTER major node
+@set SECTION minor node
+@end ifinfo
+
+@ifhtml
+@set DOCUMENT Web page
+@set CHAPTER chapter
+@set SECTION section
+@end ifhtml
+
+
+@titlepage
+@title @value{TITLE}
+@page
+@vskip 0pt plus 1fill
+@insertcopying
+@end titlepage
+
+@ifnottex
+@node Top
+@top Notes sur tDOM
+
+@end ifnottex
+
+@c ----------------------------------------------------------------------------
+@c bibliographie:
+@c
+@c
+@c ----------------------------------------------------------------------------
+
+@node Introduction à tDOM
+@chapter Introduction à tDOM
+
+@section Une bibliothèque pour gérer des documents XML
+
+Je rassemble ici les notes sur l'utilisation de l'extension tDOM en Tcl.
+Cette extension permet de traiter un fichier @code{xml}, que ce soit
+pour lire un fichier @code{xml} ou pour en écrire un.
+
+Le langage XML est constitué de règles qui permettent de coder une
+grande variété de documents : des pages html, des fichiers en format de
+texte enrichis (type Word ou LibreOffice), des fichiers pour tableurs…
+En pratique on restreint ces règles pour le contexte d’une application
+donnée en se donnant un modèle de document appelé DOM ("Document Object
+Model"). Ce modèle précise un sous-ensemble de règles XML pour les
+documents qui seront traités par cette applications (un navigateur
+internet lisant le html, un traitement de texte lisant des fichier odt
+ou docx, un tableur lisant des fichiers xlsx ou ods).
+
+@cindex tDOM
+@cindex dom
+@cindex domdoc
+@cindex domnode
+L'extension tDOM déclare d'abord les éléments qui constitueront
+le modèle de document choisi. Dans le formalisme choisi par cette
+extension, ce sera un objet @code{TclOO} dit objet @code{dom}. Sur la
+base de cet objet de modèle, on crée ensuite un objet document
+@code{dom} (@code{domdoc}). Ce document XML est lui même constitué
+d'éléments imbriqués, qu'on appelle ici des nœuds (@code{domnode}).
+
+@cindex arbre DOM
+L'élément englobant tous les autres est l'élément racine. Il contient
+ensuite des éléments enfants, qui contiendront eux même leurs
+descendants. On parle d'arbre DOM avec l'analogie d'un arbre
+généalogique (avec les ancètres au niveau supérieur). Des commandes vont
+permettre de naviguer dans cette arbre. Il faut retenir le vocabulaire
+propre à la norme XML et qui est réutilisé par tDOM.
+
+@image{./images/navigate, png}
+
+@cindex fragments
+Au cours des différentes opérations, nous pouvons être amenés à couper
+des branches de cet arbre. Ces branches coupées deviennent des
+fragments. Ce sont des éléments pouvant avoir des descendants, mais qui
+ne sont plus rattachés à l'arbre principal et donc les commandes en
+cours sur l'arbre principal ne s'appliquent plus à ces fragments. Si on
+veut pouvoir utiliser ces fragments, il est sage de stocker leur adresse
+dans une variable, que ce soit pour les effacer complètement de la
+mémoire ou bien pour les réutiliser, par exemple pour les réinsérer à un
+autre endroit de l'arbre.
+
+Nous présentons maintenant des exemples ayant une difficulté
+croissante. Nous passerons par les feuilles de style XLST, qui peuvent
+être utilisées très efficacement avec tDOM et nous donnerons donc des
+infos sur la façon de les construire.
+
+Au final, nous faisons une présentation exhaustive de toutes les
+commandes tDOM. Ces commandes sont en fait des méthodes rattachées à
+trois classes d'objets :
+
+@table @code
+@item dom
+Les méthodes rattachées à l'objet @code{dom} crée au lancement du
+paquet.
+
+@item $domdoc
+Les méthodes rattachées aux documents interprétés et stockés en mémoire.
+
+@item $domnode
+Les méthodes rattachées aux nœuds qui se trouvent dans ces documents.
+@end table
+
+
+@include 01_expl.fr.texinfo
+
+@include 03_xmlns.fr.texinfo
+
+@include 04_xpath.fr.texinfo
+
+@include 05_xslt.fr.texinfo
+
+@include 11_dom.fr.texinfo
+
+@include 12_domdoc.fr.texinfo
+
+@include 13_domnode.fr.texinfo
+
+
+
+@node index des caractères spéciaux
+@unnumbered index des caractères spéciaux
+
+@printindex ky
+
+@node index des variables globales prédéfinies
+@unnumbered index des variables globales prédéfinies
+
+@printindex vr
+
+@node index des commandes tcl
+@unnumbered index des commandes tcl
+
+@printindex fn
+
+
+@node index général
+@unnumbered index général
+
+@printindex cp
+
+@c ----------------------------------------------------------------------------
+@bye

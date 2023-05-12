@@ -1,0 +1,310 @@
+@c -*- coding: utf-8-unix; mode: texinfo; mode: auto-fill; ispell-local-dictionary: "fr_FR" -*-
+@c typographie française :    «   » … ’
+
+@c On vérifie les dictionnaires diponibles avec la commande : hunspell -D
+
+@c https://www.w3schools.com/xml/xml_namespaces.asp
+
+
+@node Les espaces de noms XML (xmlns)
+@chapter Les espaces de noms XML (xmlns)
+
+
+@node Principes généraux
+@section Principes généraux
+
+Les espaces de noms sont crées en XML pour éviter les collisions de
+noms, comme cela se fait aussi en Tcl. Mais ici, les espaces de noms
+sont séparés par des @code{:} simples au lieu de @code{::} en Tcl.
+
+Les espaces de noms doivent être déclarés avant d'être utilisés. Un
+espace de noms @code{h} doit ainsi se déclarer dans un attribut
+@code{xmlns:h="uri"} d'un élément avant son utilisation comme dans
+l'example ci-dessous qui utilise deux espaces de noms. La déclaration se
+fait ici dans le premier élément qui utilise l'espace de nom.
+
+@findex xmlns:
+@example
+<root>
+ <h:table xmlns:h="http://www.w3.org/TR/html4/">
+   <h:tr>
+     <h:td>Apples</h:td>
+     <h:td>Bananas</h:td>
+   </h:tr>
+ </h:table>
+
+ <f:table xmlns:f="https://www.w3schools.com/furniture">
+   <f:name>African Coffee Table</f:name>
+   <f:width>80</f:width>
+   <f:length>120</f:length>
+ </f:table>
+</root>
+@end example
+
+@cindex uri
+L'adresse donnée dans @code{uri} (Uniform Resource Identifier) n'est pas
+très importante (elle peut ne pas exister). Elle sert surtout
+d'identificateur unique.
+
+Au lieu de déclarer les espaces de noms dans chacun des nœeuds éléments
+qui s'y réfèrera, on peut choisir de les déclarer au niveau de l'élément
+racine su document, donc bien en amont de son utilisation.
+
+@example
+<root xmlns:h="http://www.w3.org/TR/html4/"
+      xmlns:f="https://www.w3schools.com/furniture">
+<h:table>
+  <h:tr>
+    <h:name>Apples</h:name>
+    <h:name>Bananas</h:name>
+  </h:tr>
+</h:table>
+
+<f:table>
+  <f:name>African Coffee Table</f:name>
+  <f:width>80</f:width>
+  <f:length>120</f:length>
+</f:table>
+</root> 
+@end example
+
+
+Remarquons que si on omet la notation avec préfixe, l'espace de nom ne
+s'appliquera alors qu'à l'élément ayant la forme @code{xmlns="uri"}.
+
+@example
+<table xmlns="http://www.w3.org/TR/html4/">
+  <tr>
+    <name>Apples</name>
+    <name>Bananas</name>
+  </tr>
+</table>
+@end example
+
+Comme on pourra le tester avec la fonction de sélection que nous allons
+aborder, une selection l'élément @code{name} dans l'espace de noms donné
+ici échouera.
+
+
+@node Récupérer les nœuds d'un espace de nom
+@section Récupérer les nœuds d'un espace de nom
+
+Les espaces de noms demandent plus d'attention pour certaines
+commandes. On peut toujours parcourir l'arbre en utilisant les méthodes
+@code{firstChild}, @code{nextSibling}, @code{parent}, par contre la
+méthode @code{getElementsByTagName} ne donnera rien si on n'indique pas
+l'espace de noms.
+
+Prenons l'exemple à deux espaces de noms que nous avons vu.
+
+@example
+set doc @{
+<root>
+<h:table xmlns:h="http://www.w3.org/TR/html4/">
+  <h:tr>
+    <h:name>Apples</h:name>
+    <h:name>Bananas</h:name>
+  </h:tr>
+</h:table>
+<f:table xmlns:f="https://www.w3schools.com/furniture">
+  <f:name>African Coffee Table</f:name>
+  <f:width>80</f:width>
+  <f:length>120</f:length>
+</f:table>
+</root>
+@}
+
+set DOC [dom parse $doc]
+@end example
+
+Si on cherche à récupérer tous les éléments @code{tr} cette commande ne
+fonctionne pas :
+
+@example
+set RES [$DOC getElementsByTagName "name"]
+@result{}
+@end example
+
+La commande ne renvoie pas une adresse de nom, ce qui indique un échec.
+
+Pour récupérer un élément par nom, il fait préciser l'espace de noms
+dans lequel il faut chercher  en utilisant @code{getElementsByTagNameNS}. 
+
+@example
+set RES [$DOC getElementsByTagNameNS \
+                "http://www.w3.org/TR/html4/" "name"]
+@result{} domNode0x5572828d2240 domNode0x55728291d3b0
+lmap T $RES @{$T asText@}
+@result{} Apples Bananas
+
+set RES [$DOC getElementsByTagNameNS \
+                "https://www.w3schools.com/furniture" "name"]
+@result{} domNode0x559d0f9235a0
+$RES asText
+@result{} African Coffee Table
+@end example
+
+Cependant en utilisant le préfixe sur le nom, on peut tout de même utiliser
+@code{getElementsByTagName}. Il faut pour cela bien nommer l'espace de
+nom en préfixe du terme que nous recherchons.
+
+@example
+set RES [$DOC getElementsByTagName "h:td"]
+@result{} domNode0x5572828d2240 domNode0x55728291d3b0
+lmap T $RES @{$T asText@}
+@result{} Apples Bananas
+@end example
+
+Les espaces de noms peuvent ici servir de filtrage dans la recherche
+d'éléments par nom. Pour nous convaincre, nous allons déclarer les
+espaces de noms dès la racine et interméler les préfixes dans les nœuds
+descendants.
+
+@example
+set doc @{
+<root xmlns:h="http://www.w3.org/TR/html4/"
+      xmlns:f="https://www.w3schools.com/furniture">
+<h:table>
+  <h:tr>
+    <h:name>Apples</h:name>
+    <h:name>Bananas</h:name>
+  </h:tr>
+  <f:name>Crayons</f:name>
+</h:table>
+<f:table>
+  <f:name>African Coffee Table</f:name>
+  <h:name>Cerises</h:name>
+  <f:width>80</f:width>
+  <f:length>120</f:length>
+</f:table>
+</root>
+@}
+
+set DOC [dom parse $doc]
+@end example
+
+Si on fait maintenant les recherches par noms en utilisant le filtre des
+espaces de noms, nous obtenons les éléments independament de leur
+position dans la structure de l'arbre.
+
+@example
+set RES [$DOC getElementsByTagNameNS \
+                "http://www.w3.org/TR/html4/" "name"]
+@result{} domNode0x559d0f96f220 domNode0x559d0f96ff20 domNode0x559d0f921e30
+lmap T $RES @{$T asText@}
+@result{} Apples Bananas Cerises
+
+set RES [$DOC getElementsByTagNameNS \
+                "https://www.w3schools.com/furniture" "name"]
+@result{} domNode0x559d0f96ffa0 domNode0x559d0f9700b0
+lmap T $RES @{$T asText@}
+@result{} Crayons @{African Coffee Table@}
+@end example
+
+Les espaces de noms définissent un autre type de structure, parallèle à la
+structure en arbre.
+
+
+@node Construction d'un document avec espace de noms
+@section Construction d'un document avec espace de noms
+
+Nous allons aborder maintenant la construction d'un document contenant
+des espaces de noms.
+
+Si on veut déclarer les espaces de noms dès la racine comme nous les
+avons vus, il faut utiliser la méthode @code{createDocumentNS} tout en
+déclarant le préfixe dans le nom du premier élément.
+
+@example
+package require tdom
+set DOC [dom createDocumentNS \
+             "urn:oasis:names:tc:opendocument:xmlns:office:1.0" \
+             office:document-content]
+@result{} domDoc0x559d0f8eacf0
+$DOC asXML
+@result{}
+<office:document-content \
+        xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"/>
+@end example
+
+Si on a besoin de déclarer d'autres espaces de nom sur la racine des
+documents, il faut les ajouter comme des attributs. Pour cela, nous
+devons utiliser les commandes de nœuds et donc nous positionner sur le
+nœud racine.
+
+@example
+set ROOT [$DOC documentElement]
+@result{} domNode0x559d0f96faf0
+
+$ROOT setAttribute \
+   xmlns:table "urn:oasis:names:tc:opendocument:xmlns:table:1.0"\
+   xmlns:number "urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0"\
+   xmlns:text "urn:oasis:names:tc:opendocument:xmlns:text:1.0"\
+   xmlns:style "urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+@result{} domNode0x559d0f96faf0
+
+$ROOT asXML
+@result{}
+<office:document-content
+   xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+   xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+   xmlns:number="urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0"
+   xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+   xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"/>
+@end example
+
+(la sortie a été organisée, mais elle n'apparait pas ainsi en réalité)
+
+
+@node Créer des nœuds dans un espace de nom
+@section Créer des nœuds dans un espace de nom
+
+Comme nous l'avons vu dans le chapitre précédent, les nœuds sont d'abord
+créés comme des fragments. Mais on doit dès cette création déclarer dans
+quel espace de noms, on veut les positonner en utilisant la méthode
+@code{createElementNS} :
+
+@example
+set NODE [$DOC createElementNS \
+               "urn:oasis:names:tc:opendocument:xmlns:office:1.0"\
+               office:font-face-decls] 
+@result{} domNode0x559d0f8b3d40
+$NODE asXML
+@result{} <office:font-face-decls/>
+@end example
+
+ou @code{createElement} avec une notation préfixée :
+
+@example
+set NODE [$DOC createElement office:font-face-decls] 
+@result{} domNode0x559d0f8b3d40
+$NODE asXML
+@result{} <office:font-face-decls/>
+@end example
+
+Quand les éléments sont déclarés, on les insère ensuite dans l'arbre
+avec les commandes usuelle que nous avons dans le chapitre précédent.
+
+@example
+$ROOT appendChild $NODE
+@end example
+
+
+
+@node Ajouter des attributs avec des espaces de noms
+@section Ajouter des attributs avec des espaces de noms
+
+Les espaces de noms vont aussi poser une difficulté supplémentaire dans
+les nœuds descendants quand on veut ajouter des attributes. 
+
+Nous continuons sur le document et le nœud définit dans la section
+précédente. Ici pas de difficultés.
+
+@example
+set FONT [$DOC createElement style:font-face]
+$FONT setAttribute style:name "Liberation Sans" \
+      style:font-family-generic "swiss" \
+      style:font-pitch "variable"
+@end example
+
+

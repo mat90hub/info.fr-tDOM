@@ -1,0 +1,780 @@
+@c -*- coding: utf-8-unix; mode: texinfo; mode: auto-fill; ispell-local-dictionary: "fr_FR" -*-
+@c typographie française :    «   » … ’
+
+@c On vérifie les dictionnaires diponibles avec la commande : hunspell -D
+
+
+@node Premier exemple
+@chapter Premier exemple
+
+@section Chargement de tDOM et d'un exemple XML en mémoire
+
+Nous allons commencer par la lecture simple d'un morceau de XML pour
+montrer l'action des commandes principales de la bibliothèque
+tDOM. Puis nous montrerons comment modifier ou ajouter des nœuds ou
+même construire un document complet, élément par élément.
+
+La bibliothèque @code{tDOM} s'installe sur le système au travers des
+dépôts Linux ou un autre installateur qui vous est familier. Ensuite, on
+le charge avec la commande classique pour les paquets.
+
+@findex tdom
+@example
+package require tdom
+@end example
+
+Nous commençons ici par déclarer un morceau XML simple, qui nous
+permettra d'experimenter les commandes de relecture. Ce morceau est
+entré dans Tcl sous la forme d’une chaîne de caractères. Ce peut
+être le résultat de la lecture d'un fichier XML, qui n’est pas détaillé
+ici (voir l’aide Tcl sur la lecture des fichiers texte).
+
+@example
+set doc [string trim @{
+<agents>
+    <agent id="007">
+        <name type="first">James</name>
+        <name type="last">Bond</name>
+        <age>Still attractive</age>
+        <sex>Male</sex>
+    </agent>
+    <agent id="013">
+        <name type="first">Austin</name>
+        <name type="last">Powers</name>
+        <age>Depends on your timeline</age>
+        <sex>Yes, please</sex>
+    </agent>
+</agents>
+@}]
+@end example
+
+Pour accéder aux commandes de tDOM, on commence par analyser cette
+chaîne avec la commande @code{dom parse}.
+
+@findex dom parse
+@example
+set DOC [dom parse $doc]
+@end example
+
+Le morceau de XML est alors analysé, vérifié par rapport aux contraintes
+de la norme XML et chargé en mémoire sous forme d'un objet document
+(ces types d'objets seront appelés @code{$domDoc} par la suite). Cet
+objet document (ce @code{domDoc}) appelé ici @code{DOC} permet ensuite
+d'accéder à des méthodes permettant de manipuler le code XML.
+
+
+@node Relecture d'un morceau chargé en mémoire
+@section Relecture d'un morceau chargé en mémoire
+
+La première méthode très utile est la relecture du contenu intégrale du
+document avec la commande @code{$DOC asXML}.
+
+@findex $domdoc asXML
+@example
+$DOC asXML
+
+@result{}
+<agents>
+    <agent id="007">
+        <name type="first">James</name>
+        <name type="last">Bond</name>
+        <age>Still attractive</age>
+        <sex>Male</sex>
+    </agent>
+    <agent id="013">
+        <name type="first">Austin</name>
+        <name type="last">Powers</name>
+        <age>Depends on your timeline</age>
+        <sex>Yes, please</sex>
+    </agent>
+</agents>
+
+@end example
+
+On remarquera que l'affichage est ici fait avec un formattage
+élémentaire (ces formattages peuvent ensuite se régler plus finement,
+comme nous le verrons avec les chapitres sur XSLT).
+
+Cette commande d'affichage est utile, mais quand on code, on veut
+pouvoir accéder à un élément particulier du code XML. Pour faire cette
+analyse, il fait alors descendre au niveau des nœuds du document et
+ensuite pouvoir parcourir l'arbre XML. Les nœuds sont à leur tour des
+objets, que l'on nommera génériquement @code{domnode} dans ce
+document. La commande @code{$docnode documentElement} récupère le nœud
+racine d'un document.
+
+@findex $domdoc documentElement
+@example
+set NODE [$DOC documentElement]
+@end example
+
+On peut appliquer la méthode de relecture à cet objet nœud avec
+le commande @code{$domnode asXML}, ce qui donne ici l'intégralité de
+l'arbre car nous sommes sur sa racine.
+
+Nous pouvons maintenant utiliser les méthodes méthodes liées aux nœuds
+pour naviguer dans les différents niveaux de l'arbre. La racine étant
+par définition unique, il faut descendre dans la hiérarchie ce qui peut
+se faire avec la méthode @code{$domnode childNodes}.
+
+Voici une première boucle qui renvoie les noms de tous les nœuds avec la
+méthode @code{$domnode nodeName}.
+
+@findex $domnode childNodes
+@findex $domnode nodeName
+@example
+foreach N [$NODE childNodes] @{puts [$N nodeName]@}
+@result{} agent
+@result{} agent
+@end example
+
+Le nœud @code{<agents>} contient ici deux nœuds @code{<agent>}. 
+
+Sur ce genre de cas élémentaires, on peut aussi utiliser avec profit la
+commande @code{lmap} pour obtenir un code plus condensé.
+
+@example
+lmap N [$NODE childNodes] @{$N nodeName@}
+@result{} agent agent
+@end example
+
+Souvent, nous ne recherchons pas le nom des nœuds mais leur contenu en
+texte. Ces contenus sont eux-mêmes des nœuds, mais de type
+@code{TEXT_NODE} au lieu d'être de type @code{ELEMENT_NODE}. Ces types
+s'obtiennent d'ailleurs par la méthode @code{nodeType} qui s'utilise
+exactement comme @code{nodeName}.
+
+Ici, pour aller plus vite au résultat, on peut utiliser la commande
+@code{$domnode asText}, qui donne tous les contenus texte des
+descendants du nœud courant. Et pour obtenir tous les éléments dont le
+nom est @code{name}, nous utilisons la commande @code{domnode
+getElementsByTagName}.
+
+@findex $domnode getElementsByTagName
+@findex $domnode asText
+@example
+lmap N [$NODE getElementsByTagName name] @{$N asText@}
+@result{} James Bond Austin Powers
+@end example
+
+Tous les noms sont donnés, mais sans différencier les noms des
+prénoms. Pour conserver ce lien entre prénom et nom de famille, nous
+devons descendre au niveau des nœuds @code{agent} et itérer à ce niveau.
+
+Nous introduisons plusieurs méthodes qui vont nous permettre de
+construire une boucle circulant dans l'arbre.
+
+@findex $domnode firstChild
+@findex $domnode nextSibling
+@findex $domnode getAttribute
+@findex $domnode hasAttribute
+@table @code
+@item firstChild
+Retourne le premier descendant d'un nœud donné
+
+@item nextSibling
+Retourne le nœud jumeau, c'est-à dire au même niveau que le nœud en
+cours dans l'arbre DOM.
+
+@item getAttribute
+Retourne l'attribut d'un élément.
+
+@item hasAttribute
+Vérifie si un nœud a l'attribut donné.
+@end table
+
+Voici une boucle qui utilise ces commandes pour itérer sur tous les
+nœuds enfants et filtrer ensuite selon leurs attributs.
+
+@findex $domnode firstChild
+@example
+set NODE [$NODE firstChild]
+while 1 @{
+  foreach N [$NODE childNodes] @{
+    if @{[$N getAttribute type ""] eq "first"@} @{
+      puts -nonewline "[$N asText] "
+    @}
+    if @{[$N getAttribute type ""] eq "last"@} @{
+      puts [$N asText]
+    @}
+  @}
+  set NODE [$NODE nextSibling]
+  if @{[string length $NODE] == 0@} break
+@}
+
+@result{}
+James Bond
+Austin Powers
+@end example
+
+@findex $domnode getAttribute (second argument)
+La méthode @code{getAttribute} utilise deux arguments:
+- le premier pour le nom de l'attribut dont on veut la valeur ;
+- le deuxième (l’argument optionnel) contient ici une chaîne vide.
+
+Quand ce n’est pas une chaîne vide, ce deuxième argument définit la
+valeur à retourner si l'attribut n’est pas trouvé. Ceci remplace alors
+le message d'erreur. Cette astuce permet de simplifier certaines boucles
+en évitant des messages d'erreur évidents.
+
+Une méthode plus propre, serait de vérifier l'existence de l'attribut
+@code{type} dans ces boucle avec la méthode @code{hasAttribute}. Ceci
+peut être plus efficace s'il y a beaucoup d'attributs à vérifier. On
+imbrique alors ce test supplémentaire en amont de la recherche sur le
+contenu de l'attribut.
+
+@example
+set NODE [$DOC documentElement]
+set NODE [$NODE firstChild]
+while 1 @{
+  foreach N [$NODE childNodes] @{
+    if [$N hasAttribute type] @{
+      if @{[$N getAttribute type] eq "first"@} @{
+        puts -nonewline "[$N asText] "
+      @}
+      if @{[$N getAttribute type] eq "last"@} @{
+        puts [$N asText]
+      @}
+    @}
+  @}
+  set NODE [$NODE nextSibling]
+  if @{[string length $NODE] == 0@} break
+@}
+
+@result{}
+James Bond
+Austin Powers
+@end example
+
+@findex $domnode @@attr
+Remarquons qu'on peut remplacer @code{$N getAttribute type} par
+@code{$N @@type} qui est une forme plus condensée pour retrouver un
+attribut donné par son nom.
+
+
+@node Lecture avec selectNodes et XPath
+@section Lecture avec @code{selectNodes} et XPath
+@findex selectNodes
+@cindex XPath
+
+La méthode @code{selectNode} s'applique aux nœuds et permet d'utiliser
+la norme XPath. Cette norme apporte des possiblités supplémentaires dans
+la définition des chemins, qui accédent aux nœuds d'un arbre XML. Cette
+norme utilise les règles auxquelles nous sommes habitués pour parcourir
+des chemins dans une arborescence de répertoire tout en ajoutant des
+fonctionalités supplémentaires. Nous allons montrer quelques exemples,
+avant de donner des explications plus systématiques dans un prochain
+chapitre.
+
+Nous reprenons de lecture des couples (prénoms, noms) de nos agents à
+partir de l’objet @code{$DOC} crée plus haut.  Nous pouvons d’abord
+utiliser le fait que le prénom vient toujours en premier dans notre
+source XML. Le code est alors très synthétique.
+
+@example
+foreach node [$DOC selectNodes "/agents/agent"] @{
+  puts -nonewline "[[$node selectNodes "./name\[1\]"] text] "
+  puts [[$node selectNodes "./name\[2\]"] text]
+@}
+@result{}
+James Bond
+Austin Powers
+@end example
+
+Remarquons que les crochets @code{[]} ont été échappés pour ne pas être
+interprétés par Tcl comme une instruction à exécuter, mais bien une
+valeur d'indice entre crochets à transmettre comme une expression XPath
+à la commande @code{$node selectNodes}.
+
+Si nous voulons nous assurer que nous prenons bien le prénom en premier
+(l'ordre des lignes dans la sources XML a pu être perturbé), il faut
+utiliser une seconde boucle avec un test sur le contenu de l'attribut.
+
+@findex asText
+@findex $domnode @@attr
+@example
+foreach node [$DOC selectNodes "/agents/agent"] @{
+  foreach NN [$node selectNodes "./name"] @{
+    switch [$NN @@type] @{
+       "first" @{set PR [$NN asText]@}
+       "last"  @{set NM [$NN asText]@}
+    @}
+  @}
+  puts "$PR $NM"
+@}
+@end example
+
+Nous avons utilisé la méthode @code{$domnode asText} qui renvoie tous les sous
+nœuds texte d'un nœud. Or ici, nous savons que pour chaque élément @code{NN}
+auquel nous appliquons cette méthode, il n'y a plus qu'un seul nœud
+texte. Nous avons aussi utilisé la méthode @code{$domnode @@attr} qui
+permet d'atteindre directement la valeur d'un attribut, quand on connait
+son existence, ici l'attribut @code{type} qui existe pour chaque élément
+@code{name}.
+
+Ce passage @code{[$$NN @@type]} peut être remplacé par
+@code{[$NN getAttribut type]}, mais c'est plus long et moins élégant.
+
+
+En utilisant des fonctionalités plus avancées de XPath, voici une autre
+solution qui sélectionne les nœuds @code{name} en fonction de la valeur
+de leur attribut @code{type}.
+
+@findex asText
+@findex $domnode @@attr
+@example
+foreach node [$DOC selectNodes "/agents/agent"] @{
+  foreach NN [$node selectNodes "./name\[@@type='first'\]"] @{
+    puts -nonewline "[$NN asText] "
+  @}
+  foreach NN [$node selectNodes "./name\[@@type='last'\]"] @{
+    puts [$NN asText]
+  @}
+@}
+@end example
+
+On voit que cette méthode @code{selectNodes} permet un code plus
+synthétique et plus lisible grâce à XPath. Ceci devient encore plus vrai
+pour des arbres DOM plus complexes.
+
+
+
+@node Modifier le contenu d'un nœud
+@section Modifier le contenu d'un nœud
+@findex $domnode nodeType
+@findex $domnode nodeValue
+
+Après avoir vu comment parcourir un arbre XML, nous regardons maintenant
+comment modifier le contenu d'un nœud en utilisant la méthode
+@code{nodeValue}. Cette méthode a en effet deux usages : sans paramétre,
+elle récupère la valeur d'un nœud, avec un paramètre, elle assigne au
+nœud cette nouvelle valeur.
+
+Nous imaginons que nous nous soyons placés sur le nœud donnant le famaux
+agent.
+
+@example
+$NODE asXML
+
+@result{}
+<agent id="007">
+    <name type="first">James</name>
+    <name type="last">Bond</name>
+    <age>Still attractive</age>
+    <sex>Male</sex>
+</agent>
+@end example
+
+Nous voulons maintenant remplacer "James Bond'' par "Bob Morane" en
+laissant tout le reste inchangé. Nous voyons que ce nœud "agent" a
+quatre enfants, deux ayant un attribut unique, les autres aucun. Tous
+les enfants de ces enfants sont ensuite des nœuds de type
+@code{TEXT_NODE}. Cette analyse pourrait d'ailleurs se faire avec une
+boucle.
+
+@example
+foreach N [$NODE childNodes] @{
+  puts "[$N nodeType]: [$N nodeName] ([$N getAttribute "type" ""])"
+  foreach NN [$N childNodes] @{
+     puts " └─ [$NN nodeType]: [$NN nodeValue]"
+  @}
+@}
+
+@result{}
+ELEMENT_NODE: name (first)
+ └─ TEXT_NODE: James
+ELEMENT_NODE: name (last)
+ └─ TEXT_NODE: Bond
+ELEMENT_NODE: age ()
+ └─ TEXT_NODE: Still attractive
+ELEMENT_NODE: sex ()
+ └─ TEXT_NODE: Male
+  
+@end example
+
+Les nœuds que nous voulons changer sont donc les nœuds de type
+@code{TEXT_NODE} et qui sont contenu dans un nœud "name" de type
+@code{ELEMENT_NODE}
+
+Nous avons compris la structure et nous savons 
+Pour modifier le contenu sans modifier la structure, ce sont les nœuds
+texte dont il faut modifier la valeur. Voici une boucle possible.
+
+@example
+foreach N [$NODE childNodes] @{  
+  set NT [$N firstChild]
+  switch [$N nodeName] @{
+    "name" @{
+        switch [$N @@type] @{
+          "first" @{$NT nodeValue "Bob"@}
+          "last"  @{$NT nodeValue "Morane"@}
+        @}
+    @}
+    "age" @{$NT nodeValue = "Fresh"@}
+    "sex" @{$NT nodeValue = "Male"@}
+  @}
+@}
+@end example
+
+
+@node Cloner un nœud
+@section Cloner un nœud
+@findex $domnode cloneNode -deep
+
+Le clonage permet de copier un nœud complet. On commence par se placer
+sur le nœud qu'on veut cloner puis on lance ce clonage.
+
+@example
+set NODE [$DOC documentElement]
+set NODE [$NODE firstChild]
+set NODE [$NODE cloneNode -deep]
+@end example
+
+L'option @code{-deep} utilisée ici permet de copier tous les nœuds
+descendants.
+
+Ce nœud est maintenant dans les fragments du document @code{$DOC},
+c'est-à-dire, qu'il n'est pas rattaché à l'arbre en cours. Si nous
+imprimons cet arbre avec @code{$DOC asXML}, ce nouveau nœud n'apparait
+pas. On ne l'accède que par le lien @code{$NODE} qui conserve son
+adresse.
+
+On peut par exemple décider de modifier ce fragment avec les commandes
+vues dans la section précédente, puis l'insérer dans l'arbre.
+
+
+@node Insérer un nœud dans un arbre
+@section Insérer un nœud dans un arbre
+
+La plupart des commandes de création de nouveaux nœuds ou de clonage
+comme nous venons de le voir, créent un nœud dans la liste masquée des
+fragments du document. Ils ne sont accesssibles que par leur adresse
+directe. Pour les péréniser, il est plus sûr d'insérer ces nœuds dans
+l'arbre DOM du document.
+
+Plusieurs méthodes d'insertion existent. Les méthodes sont soit au
+niveau du document soit au niveau des nœuds. Au niveau du document,
+l'insertion se fait au niveau hiérarchique le plus haut, dans notre
+exemple, ce serait donc au niveau du nœud @code{agents}. Mais ici, on
+veut insérer au niveau @code{agent}.
+
+Les commandes d'insertions possibles sont ici :
+
+@findex $domnode appendChild
+@findex $domnode insertBefore
+@findex $domnode replaceChild
+@table @code
+@item $NODE appendChild newChild
+Insère à la fin de la liste des enfants du nœud actuel
+@item $NODE insertBefore newChild refChild
+Insère après @code{refChild} dans la liste des enfants du nœud actuel
+@item $NODE replaceChild newChild oldChild
+Remplacer un nœud
+@end table
+
+
+
+@section Créer un nouveau nœud
+@findex $domdoc createElement
+@findex $domdoc createTextNode
+@findex $domdoc createComment
+
+L'objet document possède plusieurs méthodes de création de nœuds,
+@code{createElement} et @code{createTextNode} sont les principales.  Il
+existe aussi la méthode @code{createComment} pour créer un nœud
+commantaire. Ces méthodes créent à chaque fois de fragments, rattachés
+au document principale, mais non encore inséré dans l'arbre DOM du
+document. 
+
+Pour créer un nœud comme le nœud agent que nous avons vu, il faudra
+faire plusieurs étapae.
+
+@example
+set AGENT [$DOC createElement "agent"]
+@end example
+
+Nous devons ansuite ajouter un attribut à ce nœud.
+
+@findex $domnode setAttribute
+@example
+$AGENT setAttribute id "029"
+@end example
+
+@findex $domnode removeAttribute
+Si on se trompe, on peut enlever un attribut avec la méthode miroir
+@code{$domnode removeAttribute}.
+
+@example
+$AGENT setAttribute test "test01"
+$AGENT removeAttribute test
+@end example
+
+La suite de la constrcution va être un appel itératif à des
+constructions de nœuds et leur insertion progressive dans un rameau qui
+sera finalement rattaché à l'arbre complet.
+
+@example
+set DESC [$DOC createElement name]
+$DESC setAttribute type first
+$AGENT appendChild $DESC
+set TXT [$DOC createTextNode "Bob"]
+$DESC appendChild $TXT
+
+set DESC [$DOC createElement name]
+$DESC setAttribute type last
+$AGENT appendChild $DESC
+set TXT [$DOC createTextNode "Morane"]
+$DESC appendChild $TXT
+
+set DESC [$DOC createElement age]
+$AGENT appendChild $DESC
+set TXT [$DOC createTextNode "fresh flesh"]
+$DESC appendChild $TXT
+
+set DESC [$DOC createElement sex]
+$AGENT appendChild $DESC
+set TXT [$DOC createTextNode "Male"]
+$DESC appendChild $TXT
+
+$AGENT asXML
+@result{}
+<agent id="029">
+    <name type="first">Bob</name>
+    <name type="last">Morane</name>
+    <age>fresh flesh</age>
+    <sex>Male</sex>
+</agent>
+@end example
+
+Cette création assez répétitive est bien adaptée pour des constructions
+au travers de boucles. 
+
+Quand le noeud est crée, on peut l'insérer dans l'arbre. 
+
+@example
+set ROOT [$DOC documentElement]
+$ROOT appendChild $AGENT
+
+# Pour visualiser le résultat :
+# $DOC asXML
+@end example
+
+
+
+@node Enlever ou effacer un nœud
+@section Enlever ou effacer un nœud
+@findex $domnode removeChild
+@findex $domnode delete
+
+On peut soit effacer complètement un nœud soit l'enlever d'un arbre.
+
+@table @code
+@item removeChild child
+Enlève @code{child} de la liste des enfant de ce nœud et ce nœud fera
+parti de la liste des fragments de document après cette opération. Il
+n'est pas physiquement effacé.
+
+@item delete
+Efface ce nœud et tout l'arbre de ses enfants et libère la mémoire
+correspondante. Les nœuds concernés par cette opération ne sont plus
+accessible par la liste des fragments de ce document.
+@end table
+
+
+@node Ajouter un morceau XML
+@subsection Ajouter un morceau XML
+@findex $domnode appendXML
+
+Il existe une autre méthode pour créer un nœud et l'ajouter directement
+en utilisant une instruction XML complète.
+
+Nous commençons par définir une expression XML valide qui contient la
+définition d'un nouveau nœud.
+
+@example
+set newAgent @{<agent id="009">
+  <name type="first">Mata</name>
+  <name type="last">Hari</name>
+  <age>Outdated</age>
+  <sex>Female</sex>
+</agent>@}
+@end example
+
+Ensuite on place le nom courant au bon niveau dans la hiérachie
+de l'arbre pour insérer ce nouveau nœud avec la methode @code{appendXML}.
+
+@example
+set NODE [$DOC documentElement]
+$NODE appendXML $newAgent
+$NODE asXML
+@end example
+
+
+
+@node Transformer un nœud avec XLST
+@section Transformer un nœud avec XLST
+@findex $domnode xslt
+
+Cette méthode, que nous reverrons plus en détail dans un chapitre
+ultérieur, permet de transformer des morceaux XML simples en un format
+plus élaboré, incluant par exemple des attributs qui sont standards pour
+toute une série d'enregistrements.
+
+Par exemple ici, on peut ici générer un morceau XML très simple. Il ne
+distingue pas la nom du prénom, mais nous savons que le prénom arrive en
+premier. Pour différencier du résultat que nous voulons obtenir, les
+enregistrements sont ici nommés @code{person}.
+
+@example
+set chunk [string trim @{
+<?xml version="1.0" encoding="UTF-8"?>
+<person num="19">
+  <name>Mata</name><name>Hari</name>
+  <age>Outdated</age><sex>Female</sex>
+</person>
+@}]
+
+set CHNK [dom parse $chunk]
+@end example
+
+On crée donc maintenant un modèle qui va créer des éléments
+@code{agent}, qui aura un attribut @code{id} qui récupère le contenu de
+l'attribut de @code{num} de l'élément @code{person}. Puis on récupère
+les éléments @code{name} de @code{person} pour les ranger dans l'ordre
+dans les éléments @code{name type="first"} et @code{name type="last"} de
+l'élément @code{agent}.
+
+@example
+set xsl [string trim @{
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:transform version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:output method="xml" indent="no" encoding="UTF-8" />
+<xsl:template match="person">
+  <agent id="@{@@num@}">
+    <name type="first"><xsl:value-of select="name[1]"/></name>
+    <name type="last"><xsl:value-of select="name[2]"/></name>
+    <age><xsl:value-of select="age"/></age>
+    <sex><xsl:value-of select="sex"/></sex>
+  </agent>
+</xsl:template>
+</xsl:transform>
+@}]
+
+set XSL [dom parse $xsl]
+@end example
+
+On peut maintenant appliquer la modèle au morceau de xml simplifié que
+nous avons crée pour obtenir du xml formaté
+
+@example
+set RES [$CHNK xslt $XSL]
+$RES asXML
+@result{}
+<agent id="19">
+    <name type="first">Mata</name>
+    <name type="last">Hari</name>
+    <age>Outdated</age>
+    <sex>Female</sex>
+</agent>
+
+@end example
+
+Mais l'intérêt de XSLT est qu'il peut s'appliquer à tout une série
+d'enregistrements. Nous pourrions avoir collecté tous nos
+enregistrements sous une forme simplifiée.
+
+@example
+set xml [string trim @{
+<persons>
+  <person num="007">
+     <name>James</name>
+     <name>Bond</name>
+     <age>Still attractive</age>
+     <sex>Male</sex>
+  </person>
+  <person num="013">
+     <name>Austin</name>
+     <name>Powers</name>
+     <age>Depends on your timeline</age>
+     <sex>Yes, please</sex>
+  </person>
+     <person num="19">
+     <name>Mata</name><name>Hari</name>
+     <age>Outdated</age>
+     <sex>Female</sex>
+  </person>
+</persons>
+@}]
+
+set XML [dom parse $xml]
+@end example
+
+La règle de transformation que nous appliquons ne s'applique qu'au
+modèle @code{agent}, mais il le fait de manière récursive, sans qu'il y
+ait donc besoin de définir une boucle. Nous ajoutons avant ce modèle
+@code{xsl:template match="person"} nous ajoutons un modèle chapeau
+@code{xsl:template match="persons"} qui sert à enchasser la liste qui va
+être obtenu dans un élément unique, comme le demande la norme XML.
+
+
+@example
+set xsl [string trim @{
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:transform version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:output method="xml" indent="no" encoding="UTF-8" />
+<xsl:template match="persons">
+  <agents>
+    <xsl:apply-templates select="person" />
+  </agents>
+</xsl:template>
+<xsl:template match="person">
+  <agent id="@{@@id@}">
+    <name type="first"><xsl:value-of select="name[1]"/></name>
+    <name type="last"><xsl:value-of select="name[2]"/></name>
+    <age><xsl:value-of select="age"/></age>
+    <sex><xsl:value-of select="sex"/></sex>
+  </agent>
+</xsl:template>
+</xsl:transform>
+@}]
+
+set XSL [dom parse $xsl]
+@end example
+
+En appliquant cette transformations, tous les éléments @code{<agent>}
+vont être transformés.
+
+@example
+set RES [$XML xslt $XSL]
+
+$RES asXML
+@result{}
+<agents>
+    <agent id="">
+        <name type="first">James</name>
+        <name type="last">Bond</name>
+        <age>Still attractive</age>
+        <sex>Male</sex>
+    </agent>
+    <agent id="">
+        <name type="first">Austin</name>
+        <name type="last">Powers</name>
+        <age>Depends on your timeline</age>
+        <sex>Yes, please</sex>
+    </agent>
+    <agent id="">
+        <name type="first">Mata</name>
+        <name type="last">Hari</name>
+        <age>Outdated</age>
+        <sex>Female</sex>
+    </agent>
+</agents>
+
+@end example
+
+Nous avons reconfiguré tous le nœuds.
+
+
+
+
+

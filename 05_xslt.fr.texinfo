@@ -1,0 +1,735 @@
+@c -*- coding: utf-8-unix; mode: texinfo; mode: auto-fill; ispell-local-dictionary: "fr_FR" -*-
+@c typographie française :    «   » … ’
+
+@c On vérifie les dictionnaires diponibles avec la commande : hunspell -D
+
+
+@c https://www.w3schools.com/xml/xsl_transformation.asp
+@c http://blog.jdlh.com/en/2021/03/31/change-xml-attributes-xslt/
+@c http://exslt.org/
+@c https://www.cours-gratuit.com/cours-xsl/tutoriel-de-xslt-en-pdf/download
+@c https://analyse-innovation-solution.fr/publication/fr/xslt/tutoriel-xslt-bases
+@c https://haypo.developpez.com/tutoriel/xml/xslt/
+@c https://www.w3schools.com/XML/xsl_elementref.asp
+
+
+
+@node Utiliser XLST
+@chapter Utiliser XLST
+
+
+@node La méthode xslt sur les objets nœuds
+@section La méthode xslt sur les objets nœuds
+
+La méthode @code{xslt} s'applique à l'objet nœud et permet de
+transformer du code XML selon un schéma donné. C'est utilisé par exemple
+pour générer du HTML à partir de XML, mais il peut y avoir d'autres
+applications.
+
+@c Une transformation XSLT nécessite néanmoins une connaissance du fichier
+@c XML attendu. Elle doit connaître son contenu, car en gros, elle se
+@c contente de placer chacun des éléments identifiés à des positions
+@c précises dans un nouveau texte donné en modèle. 
+
+
+@section Un premier exemple
+
+Voici un exemple simple de texte XML, que nous transformons tout de
+suite en objet DOM.
+
+@example
+set xml [string trim @{
+<?xml version="1.0" encoding="UTF-8"?>
+<liste_nombres>
+  <nombre valeur="10">dix</nombre>
+  <nombre valeur="0">zéro</nombre>
+  <nombre valeur="33">trente trois</nombre>
+  <nombre valeur="6">le premier nombre parfait</nombre>
+</liste_nombres>
+@}]
+
+set XML [dom parse $xml]
+@end example
+
+
+Construisons une feuille de style (ndt. @code{stylesheet}) pour
+transformer ce morceau en code HTML.
+
+@c https://haypo.developpez.com/tutoriel/xml/xslt/
+@example
+set xsl [string trim @{
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:output 
+  method="html"
+  encoding="UTF-8"
+  doctype-public="-//W3C//DTD HTML 4.01//EN"
+  doctype-system="http://www.w3.org/TR/html4/strict.dtd"
+  indent="yes" />
+<xsl:template match="liste_nombres">
+  <html><body>
+    <p>Liste de nombres :</p>
+    <ul>
+      <xsl:apply-templates select="nombre" />
+    </ul>
+  </body></html>
+</xsl:template>
+<xsl:template match="nombre">
+  <li>
+    <xsl:value-of select="@@valeur" />
+    <xsl:text> : </xsl:text>
+    <xsl:value-of select="." />
+  </li>
+</xsl:template>
+</xsl:stylesheet>
+@}]
+
+set XSL [dom parse $xsl]
+@end example
+
+
+La transformation se fait alors de manière simple à partir des deux
+objets DOM, l'objet @code{$XML} et l'objet feuille de style
+@code{$XSL}.
+
+
+@example
+set RES [$XML xslt $XSL]
+@end example
+
+Et on peut observer le résultat en HTML (en utilisant cependant la
+méthode @code{asXML} pour un meilleur formattage que @code{asHTML}).
+
+@example
+$RES asXML
+
+@result{}
+<html>
+    <body>
+        <p>Liste de nombres :</p>
+        <ul>
+            <li>10 : dix</li>
+            <li>0 : zéro</li>
+            <li>33 : trente trois</li>
+            <li>6 : le premier nombre parfait</li>
+        </ul>
+    </body>
+</html>
+
+@end example
+
+
+Les éléments du morceau XML d'origine ont été placés à des positions
+indiquées dans le texte modèle.
+
+
+@node Déclarer une page de style de transformation
+@section Déclarer une page de style de transformation
+
+L'élément racine d'une page de style de transformation peut être
+@code{<xsl:stylesheet>} ou @code{<xsl:transform>}, qui sont deux
+synonymes.
+
+@example
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+@end example
+
+ou
+
+@example
+<xsl:transform version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+@end example
+
+Cet élément racine déclare l'espace de nom @code{xsl}. L'uri donné est
+l'adresse de l'espace de nom officiel. Il faut ajouter la version 1.0.
+
+
+@node Les élements modèles 
+@section Les élements modèles
+
+Les feuilles de style de transformation peuvent contenir un ou plusieurs
+groupes de règles, appelés modèle. Un modèle s'applique quand un nœud
+spécifié correspond à la recherche.
+
+L'instruction @code{<xsl:template>} sert à construire ces modèles. Un
+attribut @code{match} sert à définir à quel élément il faut appliquer la
+modèle. La valeur particulière @code{/} sert à définir le document dans
+son entier (donc ici la racine).
+
+@example
+<xsl:template match="/">
+</xsl:template>
+@end example
+
+
+@node Capturer l'information des attributs
+@section Capturer l'information des attributs
+
+@c https://haypo.developpez.com/tutoriel/xml/xslt/
+
+Pour capturer la valeur d'un attribut, il faudrait normalement écrire
+les règles suivantes.
+
+@example
+<xsl:element name="a">
+  <xsl:attribute name="href">
+    <xsl:value-of select="lien" />
+  </xsl:attribute>
+  <xsl:value-of select="texte" />
+</xsl:element>
+@end example
+
+Cette règle définit un élément @code{a} avec un attribut nommé
+@code{href} dont la valeur est @code{lien}. Ensuite la valeur texte
+comprise dans cet élément @code{a}.
+
+Il existe une autre façon plus courte d'exprimer la même chose en
+écrivant la valeur attendue de l'attribut entre accolades. Voici alors
+cette règle que nous venons de voir écrite de manière beaucoup plus
+simple.
+
+@example
+<a href="@{lien@}">
+  <xsl:value-of select="texte" />
+</a>
+@end example
+
+
+@node Faire une boucle 
+@section Faire une boucle
+
+L'instruction @code{<xsl:for-each>} peut être utiliser pour faire une
+boucle pendant la transformation.
+
+Par exemple, imaginons que nous ayons une fichier XML contenant une
+liste de CD.
+
+@example
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog>
+  <cd>
+    <title>Empire Burlesque</title>
+    <artist>Bob Dylan</artist>
+    <country>USA</country>
+    <company>Columbia</company>
+    <price>10.90</price>
+    <year>1985</year>
+  </cd>
+.
+.
+</catalog> 
+@end example
+
+On peut alors exprimer le traitement de chaque branche avec une boucle.
+
+@example
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsl:stylesheet version="1.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+<xsl:template match="/">
+  <html>
+  <body>
+  <h2>My CD Collection</h2>
+  <table border="1">
+    <tr bgcolor="#9acd32">
+      <th>Title</th>
+      <th>Artist</th>
+    </tr>
+    <xsl:for-each select="catalog/cd">
+    <tr>
+      <td><xsl:value-of select="title"/></td>
+      <td><xsl:value-of select="artist"/></td>
+    </tr>
+    </xsl:for-each>
+  </table>
+  </body>
+  </html>
+</xsl:template>
+
+</xsl:stylesheet> 
+@end example
+
+On peut mettre une référence à cette feuille se style de transformation
+dans le fichier XML, ce qui permet aux navigateurs compatibles avec XSLT
+de directement traiter le fichier XML pour l'afficher directement. Nous
+mettons cet appel ici en deuxième ligne.
+
+@example
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="cdcatalog.xsl"?>
+<catalog>
+  <cd>
+    <title>Empire Burlesque</title>
+    <artist>Bob Dylan</artist>
+    <country>USA</country>
+    <company>Columbia</company>
+    <price>10.90</price>
+    <year>1985</year>
+  </cd>
+.
+.
+</catalog> 
+@end example
+
+
+@node Filtrer la sortie
+@section Filtrer la sortie
+
+On peut aussi filtrer le résultat d'une boucle avec les opérateurs
+suivants.
+
+@multitable @columnfractions .3 .7
+@item = 
+@tab égalité
+@item !=
+@tab inégalité
+@item &lt;
+@tab inférieur à
+@item &gt;
+@tab supérieur à
+@end multitable
+
+Pour sélectionner un titre dans la boucle que nous faite.
+
+@example
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+<xsl:template match="/">
+  <html>
+  <body>
+  <h2>My CD Collection</h2>
+  <table border="1">
+    <tr bgcolor="#9acd32">
+      <th>Title</th>
+      <th>Artist</th>
+    </tr>
+    <xsl:for-each select="catalog/cd[artist='Bob Dylan']">
+    <tr>
+      <td><xsl:value-of select="title"/></td>
+      <td><xsl:value-of select="artist"/></td>
+    </tr>
+    </xsl:for-each>
+  </table>
+  </body>
+  </html>
+</xsl:template>
+
+</xsl:stylesheet> 
+@end example
+
+
+@node Classer les résultats
+@section Classer les résultats
+
+L'instruction @code{<xsl:sort>} permet de classer les résultats d'une
+recherche.
+
+Par exemple pour classer les résultats par artiste.
+
+@example
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+<xsl:template match="/">
+  <html>
+  <body>
+  <h2>My CD Collection</h2>
+  <table border="1">
+    <tr bgcolor="#9acd32">
+      <th>Title</th>
+      <th>Artist</th>
+    </tr>
+    <xsl:for-each select="catalog/cd">
+      <xsl:sort select="artist"/>
+      <tr>
+        <td><xsl:value-of select="title"/></td>
+        <td><xsl:value-of select="artist"/></td>
+      </tr>
+    </xsl:for-each>
+  </table>
+  </body>
+  </html>
+</xsl:template>
+
+</xsl:stylesheet> 
+@end example
+
+
+@node Donner une condition
+@section Donner une condition
+
+L'instruction @code{<xsl:if>} permet d'introduire des tests dans les
+boucles.
+
+@example
+<xsl:if test="expression">
+  ...some output if the expression is true...
+</xsl:if> 
+@end example
+
+Voici cet exemple intégré dans une feuille de style.
+
+@example
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+<xsl:template match="/">
+  <html>
+  <body>
+  <h2>My CD Collection</h2>
+  <table border="1">
+    <tr bgcolor="#9acd32">
+      <th>Title</th>
+      <th>Artist</th>
+      <th>Price</th>
+    </tr>
+    <xsl:for-each select="catalog/cd">
+      <xsl:if test="price &gt; 10">
+        <tr>
+          <td><xsl:value-of select="title"/></td>
+          <td><xsl:value-of select="artist"/></td>
+          <td><xsl:value-of select="price"/></td>
+        </tr>
+      </xsl:if>
+    </xsl:for-each>
+  </table>
+  </body>
+  </html>
+</xsl:template>
+
+</xsl:stylesheet>
+@end example
+
+
+@node Choisir un élément
+@section Choisir un élément
+
+L'instruction @code{<xsl:choose>} s'utilise avec @code{<xsl:when>} et
+@code{<xsl:otherwise>} pour exprimer des choix multiples.
+
+@example
+xsl:choose>
+  <xsl:when test="expression">
+    ... some output ...
+  </xsl:when>
+  <xsl:otherwise>
+    ... some output ....
+  </xsl:otherwise>
+</xsl:choose>
+@end example
+
+et insérer dans la feuille de style
+
+@example
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+<xsl:template match="/">
+  <html>
+  <body>
+  <h2>My CD Collection</h2>
+  <table border="1">
+    <tr bgcolor="#9acd32">
+      <th>Title</th>
+      <th>Artist</th>
+    </tr>
+    <xsl:for-each select="catalog/cd">
+    <tr>
+      <td><xsl:value-of select="title"/></td>
+      <xsl:choose>
+        <xsl:when test="price &gt; 10">
+          <td bgcolor="#ff00ff">
+          <xsl:value-of select="artist"/></td>
+        </xsl:when>
+        <xsl:otherwise>
+          <td><xsl:value-of select="artist"/></td>
+        </xsl:otherwise>
+      </xsl:choose>
+    </tr>
+ 
+   </xsl:for-each>
+  </table>
+  </body>
+  </html>
+</xsl:template>
+
+</xsl:stylesheet>
+@end example
+
+un autre exemple
+
+@example
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+<xsl:template match="/">
+  <html>
+  <body>
+  <h2>My CD Collection</h2>
+  <table border="1">
+    <tr bgcolor="#9acd32">
+      <th>Title</th>
+      <th>Artist</th>
+    </tr>
+    <xsl:for-each select="catalog/cd">
+    <tr>
+      <td><xsl:value-of select="title"/></td>
+      <xsl:choose>
+        <xsl:when test="price &gt; 10">
+          <td bgcolor="#ff00ff">
+          <xsl:value-of select="artist"/></td>
+        </xsl:when>
+        <xsl:when test="price &gt; 9">
+          <td bgcolor="#cccccc">
+          <xsl:value-of select="artist"/></td>
+        </xsl:when>
+        <xsl:otherwise>
+          <td><xsl:value-of select="artist"/></td>
+        </xsl:otherwise>
+      </xsl:choose>
+    </tr>
+    </xsl:for-each>
+  </table>
+  </body>
+ 
+</html>
+</xsl:template>
+
+</xsl:stylesheet>
+@end example
+
+
+
+@node Appliquer un modèle
+@section Appliquer un modèle
+
+L'instruction @code{<xsl:apply-template>} applique un modèle à l'élément
+courant ou ses enfants.
+
+@example
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+<xsl:template match="/">
+  <html>
+  <body>
+  <h2>My CD Collection</h2>
+  <xsl:apply-templates/>
+  </body>
+  </html>
+</xsl:template>
+
+<xsl:template match="cd">
+  <p>
+  <xsl:apply-templates select="title"/>
+  <xsl:apply-templates select="artist"/>
+  </p>
+</xsl:template>
+
+<xsl:template match="title">
+  Title: <span style="color:#ff0000">
+  <xsl:value-of select="."/></span>
+  <br />
+</xsl:template>
+
+<xsl:template match="artist">
+  Artist: <span style="color:#00ff00">
+  <xsl:value-of select="."/></span>
+  <br />
+</xsl:template>
+
+</xsl:stylesheet> 
+@end example
+
+
+@section Les éléments XSLT
+
+@c source: https://docs.microsoft.com/fr-fr/previous-versions/dotnet/netframework-2.0/ms256058(v=vs.80)
+
+Voici une table donnant les éléments XSLT possibles
+
+@multitable @columnfractions .25 .65
+@item xsl:apply-imports
+@tab Invoque une règle de modèle remplacée.
+
+@item xsl:apply-templates
+@tab Demande au processeur XSLT de rechercher le modèle approprié à appliquer selon le type et le contexte de chaque nœud sélectionné.
+
+@item xsl:attribute
+@tab Crée un nœud d'attribut et le joint à un élément de sortie.
+
+@item xsl:attribute-set
+@tab Définit un ensemble nommé d'attributs.
+
+@item xsl:call-template
+@tab Invoque un modèle par son nom.
+
+@item xsl:choose
+@tab Fournit un test conditionnel multiple en combinaison avec les éléments <xsl:otherwise> et <xsl:when>.
+
+@item xsl:comment
+@tab Génère un commentaire dans la sortie.
+
+@item xsl:copy
+@item Copie le nœud actuel de la source vers la sortie.
+
+@item xsl:copy-of
+@tab Insère des sous-arborescences er des fragments de l'arborescence résultat dans l'arborescence résultat.
+
+@item xsl:decimal-format
+@item Déclare un format décimal qui contrôle l'interprétation d'un modèle de format utilisé par la fonction format-number.
+
+@item xsl:element
+@item Crée dans la sortie un élément avec le nom spécifié.
+
+@item xsl:fallback
+@tab Appelle un contenu de modèle pouvant fournir un substitut raisonnable au comportement du nouvel élément lorsqu'il est rencontré.
+
+@item xsl:for-each
+@tab Applique un modèle de manière répétée, l'appliquant tour à tour à chaque nœud d'une collection.
+
+@item xsl:if
+@tab Permet des fragments de modèles conditionnels simples.
+
+@item xsl:import
+@tab Importe un autre fichier XSLT.
+
+@item xsl:include
+@tab Inclut un autre fichier XSLT.
+
+@item xsl:key
+@tab Déclare une clé nommée à utiliser avec la fonction key() dans les expressions XPath (XML Path Language).
+
+@item xsl:message
+@tab Envoie un message texte au tampon des messages ou à une boîte de dialogue de message.
+
+@item xsl:namespace-alias
+@tab Remplace le préfixe associé à un espace de noms donné par un autre préfixe.
+
+@item xsl:number
+@tab Insère un nombre formaté dans l'arborescence résultat.
+
+@item xsl:otherwise
+@tab Fournit un test conditionnel multiple en combinaison avec les éléments <xsl:choose> et <xsl:when>.
+
+@item xsl:output
+@tab Spécifie les options à utiliser dans la sérialisation de l'arborescence résultat.
+
+@item xsl:param
+@tab Déclare un paramètre nommé à utiliser dans un élément <xsl:stylesheet> ou <xsl:template>. Permet de spécifier une valeur par défaut.
+
+@item xsl:preserve-space
+@tab Conserve les espaces blancs dans un document.
+
+@item xsl:processing-instruction
+@tab Génère une instruction de traitement dans la sortie.
+
+@item msxsl:script*
+@tab Définit des variables et fonctions globales pour les extensions de script.
+
+@item xsl:sort
+@tab Spécifie les critères de tri pour les listes de nœuds sélectionnées par <xsl:for-each> ou <xsl:apply-templates>.
+
+@item xsl:strip-space
+@tab Élimine les espaces blancs d'un document.
+
+@item xsl:stylesheet
+@tab Spécifie l'élément de document d'un fichier XSLT. L'élément de document contient tous les autres éléments XSLT.
+
+@item xsl:template
+@tab Définit un modèle réutilisable pour générer la sortie désirée pour des nœuds d'un type et d'un contexte particuliers.
+
+@item xsl:text
+@tab Génère du texte dans la sortie.
+
+@item xsl:transform
+@tab Exerce la même fonction que <xsl:stylesheet>.
+
+@item xsl:value-of
+@tab Insère la valeur du nœud sélectionné sous la forme de texte.
+
+@item xsl:variable
+@tab Spécifie une valeur liée dans une expression.
+
+@item xsl:when
+@tab Fournit un test conditionnel multiple en combinaison avec les éléments <xsl:choose> et <xsl:otherwise>.
+
+@item xsl:with-param	
+@tab Transmet un paramètre à un modèle.
+
+@end multitable
+
+
+@section Les fonctions XSLT
+
+@c source : https://docs.microsoft.com/fr-fr/previous-versions/dotnet/netframework-2.0/ms256046(v=vs.80)
+
+Les fonctions XLST sont utilisées dans les expressions XPath d'une
+feuille de style XSLT pour accéder au nœud actuel (current()), fusionner
+différents fichiers de données XML (document()), maintenir la
+compatibilité des versions (element-available() ou
+function-available()), formater des nombres (format-number()) ou
+vérifier les propriétés du système. Le tableau suivant donne une liste
+complète des fonctions XSLT spécifiées dans le standard W3C et
+implémentées dans MSXML (Microsoft XML Core Services) versions 4.0 et
+supérieures.
+
+Notez que ces fonctions ne peuvent être appelées que depuis le
+processeur XSLT. Elles ne peuvent donc pas être appelées depuis la
+méthode selectNodes du DOM (Document Object Model). Elles diffèrent
+ainsi des fonctions XPath, qui peuvent être spécifiées dans l'argument
+de la méthode selectNodes.
+
+Fonctions XSLT
+
+@multitable @columnfractions .25 .65
+@item current
+@tab Retourne une collection de nœuds ayant le nœud actuel pour seul membre.
+
+@item document
+@tab Offre une façon de récupérer d'autres ressources XML depuis la feuille de style XSLT au-delà des données initiales fournies par le flux d'entrée.
+
+@item element-available
+@tab Retourne true si et seulement si le nom développé est le nom d'une instruction.
+
+@item format-number
+@tab Convertit le premier argument en une chaîne en utilisant la chaîne de modèle de format spécifiée par le second argument.
+
+@item function-available
+@tab Retourne Vrai si la fonction se trouve dans la bibliothèque de fonctions.
+
+@item generate-id
+@tab Retourne une chaîne qui identifie de manière unique le nœud dans l'argument node-set qui apparaît en premier dans l'ordre du document.
+
+@item key
+@tab Récupère les éléments précédemment marqués d'une instruction <xsl:key>.
+
+@item node-set
+@tab Convertit une arborescence en une collection de nœuds. Le nœud résultant contient toujours un nœud unique et le nœud racine de l'arborescence.
+
+@item system-property
+@tab Retourne un objet représentant la valeur de la propriété système identifiée par le nom.
+
+@item unparsed-entity-uri
+@tab Retourne des déclarations d'entités non analysées dans la DTD (document type definition) du document source.
+@end multitable
+
+
+Les exemples suivants sont des tests de nœuds, pas des fonctions
+
+@itemize
+@item text()
+@item processing-instruction()
+@item comment()
+@item node()
+@end itemize
+
+Pour plus d'informations, voir Tests de nœuds.

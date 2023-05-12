@@ -1,0 +1,562 @@
+@c -*- coding: utf-8-unix; mode: texinfo; mode: auto-fill; ispell-local-dictionary: "fr_FR" -*-
+@c typographie française :    «   » … ’
+
+@c https://docs.activestate.com/activetcl/8.6/tcl/tdom/domDoc.html
+@c https://www.magicsplat.com/tcl-docs/tdom/domDoc.html
+
+@c Usage domDoc <method> <args>, where method can be:
+@c      documentElement ?objVar?                
+@c      getElementsByTagName name               
+@c      getElementsByTagNameNS uri localname    
+@c      createElement tagName ?objVar?          
+@c      createElementNS uri tagName ?objVar?    
+@c      createCDATASection data ?objVar?        
+@c      createTextNode text ?objVar?            
+@c      createComment text ?objVar?             
+@c      createProcessingInstruction target data ?objVar? 
+@c      asXML ?-indent <none,0..8>? ?-channel <channel>? ?-escapeNonASCII? ?-escapeAllQuot? ?-doctypeDeclaration <boolean>?
+@c      asHTML ?-channel <channelId>? ?-escapeNonASCII? ?-htmlEntities?
+@c      asText                                  
+@c      asJSON ?-indent <none,0..8>?            
+@c      getDefaultOutputMethod                  
+@c      publicId ?publicId?                     
+@c      systemId ?systemId?                     
+@c      internalSubset ?internalSubset?         
+@c      indent ?boolean?                        
+@c      omit-xml-declaration ?boolean?          
+@c      encoding ?value?                        
+@c      standalone ?boolean?                    
+@c      mediaType ?value?                       
+@c      delete                                  
+@c      xslt ?-parameters parameterList? ?-ignoreUndeclaredParameters? ?-xsltmessagecmd cmd? <xsltDocNode> ?objVar?
+@c      toXSLTcmd                               
+@c      cdataSectionElements (?URI:?localname|*) ?boolean?
+@c      normalize ?-forXPath?                   
+@c      nodeType                                
+@c      hasChildNodes                           
+@c      childNodes                              
+@c      firstChild ?nodeObjVar?                 
+@c      lastChild ?nodeObjVar?                  
+@c      appendChild new                         
+@c      insertBefore new ref                    
+@c      replaceChild new old                    
+@c      removeChild child                       
+@c      ownerDocument                           
+@c      getElementById id                       
+@c      baseURI ?URI?                           
+@c      appendFromList nestedList               
+@c      appendFromScript script                 
+@c      insertBeforeFromScript script ref       
+@c      appendXML xmlString                     
+@c      selectNodesNamespaces ?prefixUriList?   
+@c      selectNodes ?-namespaces prefixUriList? ?-cache <boolean>? xpathQuery ?typeVar? 
+@c      renameNode <nodelist> <newName>         
+@c      deleteXPathCache ?xpathQuery?           
+@c      readlock                                
+@c      writelock                               
+@c      renumber                                
+
+
+@node Les instances documents 
+@chapter Les instances documents (domdoc)
+
+@section Les méthodes rattachées aux instances documents.
+
+Quand une instance document (@code{domDoc}) est déclarée, on peut
+utiliser différentes méthodes qui réalisnt les actions suivantes :
+
+@itemize 
+@item création d'un nœud fragment
+
+@item récupération
+
+@end itemize
+
+
+
+@node Créer ou effacer des nœuds
+@section Créer ou effacer des nœuds
+
+Il existe plusieurs méthodes pour créer des nœuds. Au moment de leur
+création, ces nœuds sont dans l'arbre DOM qui a été créé, mais ils n'y
+sont pas encore rattachés. Ces sont de fragement, qu'il faudra ensuite
+insérer à la position choisie dans l'arbre DOM.
+
+@table @code
+@item $domDoc  createElement tagName ?objVar?
+Crée (alloue) un nouveau nœud pour un élément ayant pour nom
+@code{tagName}, le concatène aux fragments de liste dans l'objet document
+et retourne l'objet nœud. Si @code{objVar} est donné, l'adresse de
+l'objet est stockée dans cette variable.
+
+@item $domDoc createElementNS uri tagName ?objVar?
+Crée (alloue) un nouveau nœud dans l'espace de nom donné par
+l'@code{uri} pour un élément ayant pour nom @code{tagName}, le concatène
+au fragment de liste dans l'objet document et retourne l'objet nœud. Si
+@code{objVar} est donné, l'adresse de l'objet est stockée dans cette
+variable.
+
+@item $domDoc createTextNode text ?objVar?
+Crée (alloue) un nouveay nœud texte avec la valeur texte, le concatène
+au fragment de liste dans l'objet document et retourne l'objet nœud. Si
+@code{objVar} est donné, l'adresse de l'objet est stockée dans cette
+variable.
+
+@item $domDoc createComment text ?objVar?
+Crée (alloue) un nouveay nœud commentaire avec la valeur texte, le
+concatène au fragment de liste dans l'objet document et retourne l'objet
+nœud. Si @code{objVar} est donné, l'adresse de l'objet est stockée dans
+cette variable.
+
+@item $domDoc createCDATASection data ?objVar?
+Crée (alloue) un nouveay nœud CDATA avec la valeur data, le concatène
+au fragment de liste dans l'objet document et retourne l'objet nœud. Si
+@code{objVar} est donné, l'adresse de l'objet est stockée dans cette
+variable.
+
+@item $domDoc createProcessingInstruction target data ?objVar?
+Crée un instruction, la concatène au fragment de liste dans l'objet
+document et retourne l'objet nœud. Si @code{objVar} est donné, l'adresse
+de l'objet est stockée dans cette variable.
+@end table
+
+
+En regard de ces créations de nœuds, on peut aussi les détruire.
+
+@table @code
+@item $domDoc delete
+Efface explicitement le document, inclue les commandes objet Tcl (pour
+les nœuds, le fragement et les nouveaux nœuds, l'objet document
+lui-même) et l'arbre @code{DOM} associé.
+@end table
+
+
+@node Insérer ou détruire des nœuds
+@section Insérer ou détruire des nœuds
+
+Il existe des méthodes d'insertion de nœud au niveau du document. Elles
+sont simplement moins précises que leur équivalent qui s'appliquent à un
+nœud, car ici elle ne s'applique qu'au nœud hiérarchiquement le plus
+haut, c'est à dire la racine.
+
+Si on veut insérer à un autre endroit, il faudra naviguer dans l'arbre
+pour se positioner au bon endroit à ensuite utiliser les méthodes liées
+aux nœuds.
+
+Ces méthodes d'insertion et d'effacement peuvent être néanmoins utiles.
+
+@table @code
+@item $domDoc appendChild newChild
+Ajoute un nouvel enfant à la fin de la liste de nœuds de plus haut
+niveau du document.
+
+@item removeChild child
+Enlève l'enfant @code{child} de la liste des nœuds de plus haut niveau
+du document. Ce nœud s'aggrège à la liste des fragments de document et
+n'est pas effacé physiquement.
+
+@item $domDoc insertBefore newChild refChild
+Insère le nouvel enfant @code{newChile} dans la liste des nœuds de plus
+haut niveau avant le nœud @code{refChild}. Si ce nœud et la chaîne vide,
+insère le nouveau nœud à la fin de la liste.
+
+@item $domDoc replaceChild newChild oldChild
+Remplace @code{oldChild} par @code{newChild} dans la liste des enfants
+de ce nœud. Le nœud @code{oldChild} fera parti de la liste des fragments
+du document après cette opération.
+
+@item $domDoc appendFromList list
+Parses list , creates an according DOM subtree and appends this subtree
+at the end of the current list of top level nodes of the document.
+
+@item appendXML XMLstring
+Analyse la chaîne @code{XMLstring}, crée le sous-arbre DOM correspondant
+et l'ajoute à la fin de l'arbre en cours au niveau le plus haut des
+nœuds du document.
+
+
+@end table
+
+
+@node Récupérer des nœuds
+@section Récupérer des nœuds
+
+Plusieurs méthodes existent pour récupérer des nœuds selon certains
+critères.
+
+@table @code
+@item $domDoc documentElement ?objVar?
+Retourne l'élément hiérarchiquement le plus haut dans le document,
+l'élément racine ('root' en Anglais).
+     
+@item $domDoc getElementsByTagName name
+Retourne une liste de tous les éléments, qui correspondent au motif
+'name' (en utilisant le style de reconnaissance global comme pour les
+fichiers). 
+
+@item $domDoc getElementsByTagNameNS uri localname
+Retourne une liste de tous les éléments, qui correspondent au motif dans
+l'espace de noms donné par l'uri.
+
+@item $domDoc selectNodesNamespaces ?prefixUriList?
+Cette méthode permet de contrôler les préfixes globaux d'un document en
+appliquant l'espace de nom, qui sera utilisé pour les appels de la
+méthode de selection de nœuds @code{selectNodes} (pour le document comme
+pour tous les nœuds qui lui appartiennent), si ce n'est pas surchargé
+en utilisant l'option @code{-namespaces} de la méthode
+@code{selectNodes}. Tout préfixe d'espace de noms dans une expression
+XPath sera d'abord interprété selon cette liste. Si cette liste relie le
+même préfixe à différents espaces de noms, alors la première association
+l'emporte. Si un préfixe ne peut pas être interprété avec le liste
+global des paires préfixes/espaces de noms, alors les définitions des
+espaces de noms dans le scope du contexte du nœud courant seront utilisé
+pour interpréter les préfixes, comme d'habitude. Si l'argument optionnel
+@code{prefixUriList} est utilisé, alors la liste global des paires
+préfixes/espaces de nom est réglés sur cette liste et la retourne. Sans
+cet argument optionnel, la méthode retourne la liste courante. Le
+résultat par défaut et la liste vide.
+@end table
+
+Les méthodes suivantes sont identiques à celle du même nom et qui
+s'appliquent aux nœuds. Ici elles s'appliquent simplement au nœud le
+plus haud du document, c'est-à dire à la racine du document.
+
+@table @code
+@item $domDoc getElementById id
+Returns the node having a id attribute with value id or the emtpy
+string, if no node has an id attribute with that value.
+
+@item $domDoc firstChild ?objVar?
+Retourne le premier nœud de niveau le plus haut du document.
+
+@item $domDoc lastChild ?objVar?
+Retourne le dernier nœud, de niveau le plus haut, du document.
+
+@item $domDoc childNodes
+Retourne la liste des nœuds de plus haut niveau du document.
+
+@end table
+
+
+@node Afficher un document
+@section Afficher un document
+
+Il existe plusieurs méthodes pour afficher le contenu complet d'un
+document et qui correspondent aux différents formats usuels rencontrés.
+
+@table @code
+@item $domDoc asXML ?-indent none/1..8? ?-channel channelId? ?-escapeNonASCII? ?-doctypeDeclaration <boolean>? ?-escapeAllQuot?
+Retourne un arbre @code{DOM} comme un chaîne @code{XML}, optionnellement
+indentée ou envoie la sortie directement sur le canal donné par
+@code{channelId}. Si l'option @code{-escapeNonASCII} est donnée,
+tout les caractères qui ne sont pas des caractères ASCII sur 7 bits sont
+échappés ou tous les éléments @code{PCDATA} seront échappés dans la
+représentation décimale. L'indicateur @code{-doctypeDeclaration}
+détermine, si il y aura une déclaration @code{DOCTYPE} émise avant le
+premier nœud du document. Par défaut, on ne le fait pas. Le nom
+@code{DOCTYPE} sera toujours le nom de l'élément de l'élément
+document. Une entité extérieur à la déclaration du sous-ensemble sera
+omise, si le document a un identifiant système. Si l'option
+@code{-escapeAllQuot} est donnée, les marques de quotation seront
+échappées avec @code{&quot;}, même dans le contenu texte des éléments.
+
+@item $domDoc asHTML ?-channel channelId? ?-escapeNonASCII? ?-htmlEntities? ?-doctypeDeclaration <boolean>?
+Retourne l'arbre @code{DOM} sérialisé selon les règles @code{HTML} (les
+éléments @code{HTML} sont reconnus quelque soit la casse, sans les
+marqueurs de fin pour les éléments @code{HTML} vide etc.), comme les
+chaînes ou envoie la sortie directement sur le canal @code{channelId}
+qui est donné. Si l'option @code{-escapeNonASCII} est donnée, tous les
+caractères qui ne sont pas des caractères ASCII sur 7 bits ou les
+éléments @code{PCDATA} seront échappés comme des caractères de référence
+dans la représentation décimale. Si l'option @code{-htmlEntities} est
+donnée, un caractère est donné en utilisant les références de caractère
+HTML 4.01, si l'une est utilisée pour lui. L'indicateur
+@code{-doctypeDeclaration} détermine si une déclaration @code{DOCTYPE}
+sera émise avant le premier nœud du document. Par défaut, ce ne l'est
+pas. La nom @code{DOCTYPE} sera toujours le nom de l'élément documnet
+sans normalisation de casse. Une entité externe, déclarant un sous
+ensemble externe n'est émis que si le document a un identifiant
+système. La déclaration @code{doctype} est écrite en fonction de
+l'information disponible, sans vérification, si c'est une information
+@code{HTML} reconnue (W3C) ou si le document confirme la version
+@code{HTML}. 
+
+
+@item $domDoc asText
+La méthode @code{asText} donne un arbre résultat en donnant les
+chaînes-valeur de tous les nœuds dans l'arbre du document sans
+échappement. En effet, c'est la méthode @code{xlst} "text" (XSLT 1.0
+recommendation, section 16.3).
+@end table
+
+
+
+@node Retourner des informations sur le document
+@section Retourner des informations sur le document
+
+
+@table @code
+@item $domDoc getDefaultOutputMethod
+Retourne la méthode de sortie par défaut du document. Usuellement, c'est
+le résultat d'une transformation @code{XLST}.
+
+@item $domDoc publicId ?publicId?
+Retourne l'identifiant publique de la déclaration @code{codtype} du
+document, s'il y en a un, autrement une chaîne vide. S'il y a une valeur
+donnée à une méthode, l'identifiant publique du document est réglée à
+cette valeur.
+
+@item $domDoc systemId ?systemId?
+Retourne l'identifiant système de la déclaration @code{doctype} du
+document, s'il y en a un, autrement une chaîne vide. S'il y a une valeur
+donnée à une méthode, l'identifiant système d'un document est réglé sur
+cette valeur.
+
+@item $domDoc ownerDocument ?domObjVar?
+Retourne le document lui même (son adresse d'objet).
+
+
+@item $domDoc internalSubset ?internalSubset?
+Retourne le sous-ensemble interne de la déclaration @code{doctype} du
+document, s'il y en a un, autrement une chaîne vide. S'il y a une valeur
+donnée à la méthode, le sous-ensemble du document est réglé à cette
+valeur.
+Notez qu'aucune des méthodes d'analyse ne préserve le sous-ensemble d'un
+document. Un document venant d'être analysé aura toujours un
+sous-ensemble interne vide. Notez aussi, que cette méthode ne fait
+aucune vérification syntaxique sur le sous ensemble donné.
+
+@item $domDoc cdataSectionElements (?URI:?localname|*) ?<boolean>?
+This method allows to control, for which element nodes the text node
+childs will be serialized as CDATA sections (this affects only
+serialization with the asXML method, no text node is altered in any way
+by this method). IF the method is called with an element name as first
+argument and a boolean with value true as second argument, every text
+node child of every element node in the document with the same name as
+the first argument will be serialized as CDATA section. If the second
+argument is a boolean with value false, all text nodes of all elements
+with the same name as the first argument will be serialized as
+usual. Namespaced element names have to given in the form
+namespace_URI:localname, not in the otherwise usual prefix:localname
+form. With two arguments called, the method returns the used boolean
+value. If the method is called with only an element name, it will return
+a boolean value, indicating, if the text nodes childs of all elements
+with that name in the document will be serialized as CDATA section
+elements (return value 1) or not (return value 0). If the method is
+called with only one argument and that argument is an asterisk ('*'),
+then the method returns an unordered list of all element names of the
+document, for which the text node childs will be serialized as CDATA
+section nodes.
+
+@item $domDoc nodeType
+Retourne les type de nœud du nœeud document. Cela doit toujours être
+@code{DOCUMENT_NODE}. 
+    
+@end table 
+
+
+
+
+@node Appliquer une transformation XSLT
+@section Appliquer une transformation XSLT
+
+@table @code
+@item $domDoc xslt ?-parameters parameterList? ?-ignoreUndeclaredParameters? ?-xsltmessagecmd script? stylesheet ?outputVar?
+Applique une transformation XSLT à tout le document du nœud objet en
+utilisant la feuille de style XSLT donnée (comme un domdoc). Retourne un
+objet document contenant le document resultant de cette transformation
+et stocke cet objet document dans la variable optionnelle
+@code{outputVar}, si elle est donnée.
+
+L'argument optionnel @code{-parameters} règle le niveau hierarchique le
+plus haut @code{<xsl:param>} aux valeurs chaînes. L'argument
+@code{parameterList} doit être une liste Tcl consistant en paires nom de
+paramètre et leur valeurs.
+
+Si l'argument optionnel @code{-ignoreUndeclaredParameters} est donné,
+alors les noms de paramètres dans la liste donnée dans l'argument
+@code{parameterList} de l'option @code{-parameters} qui ne sont pas
+déclarés comme des paramètres de plus haut niveau dans la feuille de
+style sont ignorés silencieusement. Sans cette option, une erreur est
+levée si l'utilisateur essaie de déclarer un paramètre de plus haut
+niveau qui n'est pas déclaré dans la feuille de style.
+
+L'agument optionnel @code{-xsltmessagecmd} règle le message de retoure
+des éléments @code{xslt:message} dans la feuille de style. La commande
+réelle est constitué du script, donné en argument à cette option, ajouté
+au fragment XML en instanciant le contenu de l'élément
+@code{xsl:message} comme une chaîne (comme si la fonction
+@code{string()} de XPath aurait été appliquée à ce fragment XML) et un
+drapeau qui indique si le @code{xsl:message} a un attribut
+@code{terminate} avec la valeur @code{yes}.
+
+@item $domDoc toXSLTcmd ?objVar?
+Si l'arbre DOM représente une feuille de style XLST valide, cette
+méthoode transforme l'arbre DOM en une commande xlst, sinon elle
+retourne une erreur. La commande @code{xsltCmd} est retournée et stockée
+dans la variable @code{objVar}, si ce nom est donné. Une transformation
+réussie d'un arbre DOM en une commande @code{xsltCmd} enlève la commande
+@code{domDoc cmd} et tous les @code{nodeCmds} du document.
+
+La syntaxe de la commande @code{xsltCmd} créée est :
+
+@example
+xsltCmd method ?arg ...?
+@end example
+
+Les méthode valables sont :
+
+@table @code
+@item transform ?-parameters parameterList? ?-ignoreUndeclaredParameters? ?-xsltmessagecmd script? domDoc ?outputVar?
+Applique la transformation XSLT à tout le document
+@code{domdoc}. Retourne l'objet document contenant le document résultat
+de cette transformation et le stocke dans l'argument optionnel
+@code{outputVar}.
+
+The optional @code{-parameters} option sets top level <xsl:param> to string
+values. The parameterList has to be a tcl list consisting of parameter
+name and value pairs.
+
+If the option -ignoreUndeclaredParameters is given, then parameter names
+in the parameterList given to the -parameters options that are not
+declared as top-level parameters in the stylesheet are silently
+ignored. Without this option, an error is raised, if the user tries to
+set a top-level parameter, which is not declared in the stylesheet.
+
+The -xsltmessagecmd option sets a callback for xslt:message elements in
+the stylesheet. The actual command consists of the script, given as
+argument to the option, appended with the XML Fragment from
+instantiating the xsl:message element content as string (as if the XPath
+string() function would have been applied to the XML Fragment) and a
+flag, which indicates, if the xsl:message has an attribute "terminate"
+with the value "yes".  delete Deletes the xsltCmd and cleans up all used
+recourses
+
+If the first argument to an xsltCmd is a domDoc or starts with a "-",
+then the command is processed in the same way as <xsltCmd> transform.
+    
+@item $domDoc normalize ?-forXPath?
+Puts all Text nodes in the document into a "normal" form where only
+structure (e.g., elements, comments, processing instructions and CDATA
+sections) separates Text nodes, i.e., there are neither adjacent Text
+nodes nor empty Text nodes. If the option -forXPath is given, all CDATA
+sections in the nodes are converted to text nodes, as a first step
+before the normalization.
+    
+
+
+
+
+
+
+@item $domDoc hasChildNodes
+Retourne 1 si le document a des nœuds dans son arbre, 0 sinon.
+
+
+
+
+@item $domDoc selectNodes ?-namespaces prefixUriList? ?-cache <boolean>? xpathQuery ?typeVar?
+Returns the result of applying the XPath query xpathQuery to the
+document. The context node of the query is the root node in the sense of
+the XPath recommendation (not the document element). The result can be a
+string/value, a list of strings, a list of nodes or a list of attribute
+name / value pairs. If typeVar is given the result type name is stored
+into that variable (empty, bool, number, string, nodes, attrnodes or
+mixed).
+
+The argument xpathQuery has to be a valid XPath expression. However,
+there is one exception to that rule. Tcl variable names can appear in
+the XPath statement at any position where it is legal according to the
+rules of the XPath syntax to put an XPath variable. The value of the
+variable is substituted for the variable name. Ignoring the syntax rules
+of XPath the Tcl variable name may be any legal Tcl var name: local
+variables, global variables, array entries and so on.
+
+The option -namespaces expects a tcl list with prefix / namespace pairs
+as argument. If this option is not given, then any namespace prefix
+within the xpath expression will be first resolved against the list of
+prefix / namespace pairs set with the selectNodesNamespaces method for
+the document, the node belongs to. If this fails, then the namespace
+definitions in scope of the context node will be used to resolve the
+prefix. If this option is given, any namespace prefix within the xpath
+expression will be first resolved against that given list (and ignoring
+the document global prefix / namespace list). If the list bind the same
+prefix to different namespaces, then the first binding will win. If this
+fails, then the namespace definitions in scope of the context node will
+be used to resolve the prefix, as usual.
+
+If the -cache option is used with a true value, then the xpathQuery will
+be looked up in a document specific cache. If the query is found, then
+the stored pre-compiled query will be used. If the query isn't found, it
+will be pre-compiled and stored in the cache, for use in further
+calls. Please notice, that the xpathQuery as given as string is used as
+key for the cache. This means, that equal XPath expressions, which
+differ only in white space are treated as different cache
+entries. Special care is needed, if the XPath expression includes
+namespace prefixes. During pre-compilation, the prefixes will be
+resolved first to the prefix / namespace pairs of the -namespaces
+option, if given, and to the namespaces in scope of the context node at
+pre-compilation time. If the XPath is found in the cache, neither the
+-namespaces option nor the namespaces in scope of the context node will
+be taken in account but the already resolved (stored) namespaces will be
+used for the query.
+
+
+Examples:
+
+@example
+set paragraphNodes [$node selectNodes @{chapter[3]//para[@@type='warning' or @@type='error'@} ]
+
+foreach paragraph $paragraphNodes @{
+   lappend  values [$paragraph selectNodes attribute::type]
+@}
+
+set doc [dom parse @{<doc xmlns="http://www.defaultnamespace.org"><child/></doc>@}]
+set root [$doc documentElement]
+set childNodes [$root selectNodes -namespaces @{default http://www.defaultnamespace.org@} default:child]
+@end example
+
+
+@example
+baseURI ?URI?
+@end example
+
+Returns the present baseURI of the document. If the optional argument
+URI is given, sets the base URI of the document to the given URI.
+
+@example
+appendFromScript tclScript
+@end example
+Appends the nodes created by the tclScript by Tcl functions, which have
+been built using dom createNodeCmd, at the end of the current list of
+top level nodes of the document.
+
+@example
+insertBeforeFromScript tclScript refChild
+@end example
+
+Inserts the nodes created in the tclScript by Tcl functions, which have
+been built using dom createNodeCmd, before the refChild into to the list
+of top level nodes of the document. If refChild is the empty string, the
+new nodes will be appended.
+
+@example
+deleteXPathCache ?xpathQuery?
+@end example
+
+If called without the optional argument, all cached XPath expressions of
+the document are freed. If called with the optional argument xpathQuery,
+this single XPath query will be removed from the cache, if it is
+there. The method always returns an empty string.
+
+Otherwise, if an unknown method name is given, the command with the same
+name as the given metho within the namespace ::dom::domDoc is tried to
+be executed. This allows quick method additions on Tcl level.
+
+Newly created nodes are appended to a hidden fragment list. If they are
+not moved into the tree they are automaticaly deleted, when the whole
+document gets deleted.
+
+@end table
+
+@end table

@@ -1,0 +1,304 @@
+@c -*- coding: utf-8-unix; mode: texinfo; mode: auto-fill; ispell-local-dictionary: "fr_FR" -*-
+@c typographie française :    «   » … ’
+
+@c On vérifie les dictionnaires diponibles avec la commande : hunspell -D
+
+
+@c https://www.w3schools.com/xml/xpath_intro.asp
+@c https://www.tutorialspoint.com/xpath/xpath_axes.htm
+
+@node Les règles de XPath
+@chapter Les règles de XPath
+
+@section XPath et les septs nœuds
+
+Nous avons vu comment la commande @code{domnode selectNodes} pouvait
+utiliser une expression XPath de manière avantageuse. Nous alons voir
+ici les règles de construction d'une expression XPath, qui sont
+finalement assez intuitives. En effet, elle reprend en grande partie la
+syntaxe qu'on utilise pour retrouver un nom de fichier dans une
+arborescence de répertoires.
+
+Les chemins de sélection XPath fonctionnent avec cette méthode
+@code{selectNodes}, mais aussi comme nous le verrons dans le chapitre
+suivant avec XSLT. Dans ce chapitre, nous nous limiterons aux exemples
+utilisant @code{selectNodes}. Les exemples utilisant XSLT seront vus
+dans le prochain chapitre.
+
+XPath reconnaît sept type de nœuds :
+
+@itemize @minus
+@item les éléments
+@item les attributs
+@item les chaînes de texte
+@item les espaces de noms
+@item les instructions à exécuter
+@item les commentaires
+@item le nœuds document
+@end itemize
+
+Les documents XML sont vu comme des arbres de nœuds, dont l'élément le
+plus haut hiérachiquement et l'élémnet racine.
+
+Les nœuds peuvent avoir des enfants ou descendants, des parents ou
+ascendants, des frères jumeaux. S'ils n'ont rien de tout cela, ce sont
+des valeurs dites atomiques.
+
+
+@node L'encodage d'un chemin
+@section L'encodage d'un chemin
+
+Une chemin pour accéder à un nœud utilise les codes suivants (entre
+autre).
+
+@multitable @columnfractions .1 .9
+@item nodename
+@tab Sélectionne tous les nœuds appelés "nodename"
+@item /
+@tab Sélectionne à partir du nœud racine
+@item //
+@item
+@tab Sélectionne depuis le nœud courant, les nœuds du document qui
+correspondent à la sélection, sans égard à leur niveau.
+@item .
+@tab Sélectionne le nœud courant
+@item ..
+@tab Sélectionne le parent du nœud courant
+@item @@
+@tab Sélectionne les attributs
+@end multitable
+
+Sur un exemple, prenons l'arbre XML suivant.
+
+@example
+set xml [string trim @{
+<?xml version="1.0" encoding="UTF-8"?>
+<bookstore>
+<book>
+  <title lang="en">Harry Potter</title>
+  <price>29.99</price>
+</book>
+
+<book>
+  <title lang="en">Learning XML</title>
+  <price>39.95</price>
+</book>
+</bookstore>
+@}]
+
+set XML [dom parse $xml]
+@end example
+
+Sur cette exemple, voici des chemins XPath possible de sélection.
+
+@multitable @columnfractions .3 .7
+@item bookstore
+@tab Sélectionne tous les nœuds ayant le nom @code{bookstore}
+
+@item /bookstore
+@tab Sélectionne l'élement racine @code{bookstore}@footnote{Si un chemin
+commence par @code{/}, ce sera toujours une référence absolue.}
+
+@item bookstore/book
+@tab Sélectionne tous les éléments @code{book} enfant de @code{boostore}.
+
+@item //book
+@tab Sélectionne tous les éléments @code{book}, quelque soit leur place
+dans le document.
+
+@item bookstore//book
+@tab Sélectionne tous les éléments @code{book} qui sont descendant de
+l'élément @code{bookstore}, quelque soit leur position dans l'arbre des
+descendants.
+
+@item //@@lang
+@tab Sélectionne tous les attributs appelés @code{lang}
+@end multitable
+
+
+@node Utilisation de prédicats
+@section Utilisation de prédicats
+
+On peut aussi utiliser des prédicats pour être plus précis dans la
+sélection d'un chemin. Ces prédicats sont toujours entourés de crochets
+@code{[]}, qu'il faudra veiller à échapper si cela s'applique dans une
+expression Tcl.
+
+Voici des exemples basés sur le morceau XML donné plus haut.
+
+@multitable @columnfractions .3 .7
+@item /bookstore/book[1]
+@tab Sélectionne le premier élément @code{book} dans la liste des
+enfants de l'élément @code{bookstore}.
+@item /bookstore/book[last()]
+@tab Sélectionne le dernier élément @code{book} dans les enfants de
+l'élément @code{bookstore}
+@item /bookstore/book[last()-1]
+@tab Sélectionne l'avant dernier élément @code{book} dans les enfants de
+l'élément @code{bookstore}
+@item /bookstore/book[position()<3]
+@tab Sélectionne les deux premiers éléments @code{book} dans les enfants de
+l'élément @code{bookstore}
+@item //title[@@lang]
+@tab Sélectionne tous les élément titre, qui ont un attribut @code{lang}
+@item //title[@@lang='en']
+@tab Sélectionne tous les éléments titre qui ont un attribut @code{lang}
+avec pour valeur @code{en}.
+@item /bookstore/book[price>35.00]
+@tab Sélectionne tous les éléments @code{book} de @code{bookstore} qui
+ont un élément @code{price} supérieur à @code{35.00}
+@item /bookstore/book[price>35.00]/title
+@tab Sélectionne tous les titres des @code{book} de @code{bookstore} qui
+ont un @code{price} supérieur ) @code{35.00}.
+@end multitable
+
+
+@node Sélection générique
+@section Sélection générique
+
+Il existe des sélections génériques de nœuds.
+
+@multitable @columnfractions .1 .9
+@item *
+@tab Correspond à n'importe quel élément
+@item @@*
+@tab Correspond à n'importe quel attribut.
+@item node()
+@tab Correspond à n'importe quel nœuds, de tout type
+@end multitable
+
+Sur des exemples
+
+
+@multitable @columnfractions .3 .7
+@item /bookstore/*
+@tab Séléctioone tous les enfants de @code{bookstore}
+@item //*
+@tab Sélectionne tous les nœuds
+@item //title[@*]
+@tab Sélectionne tous les éléments titre qui ont au moins un attribut
+@end multitable
+
+
+On peut aussi faire des combinaisons de plusieurs sélections
+
+@multitable @columnfractions .4 .6
+@item /book/title | //book/price
+@tab Sélectionne tous les titres ET tous les prix de éléments @code{book}
+@item //title | //price
+@tab Séléctionne tous les titres ET tous les prix qui existent dans le
+document
+@item /bookstore/book/title | //price
+@tab Sélectionne tous les élements titre de livre inclus dans le
+document et tous les prix qui y sont.
+@end multitable
+
+
+@node Les axes XPath
+@section Les axes XPath
+
+Les axes sont une autre façon de déclarer un chemin en utilisant les
+commandes XPath qui suivent.
+
+@table @code
+@item ancestor
+Représente les ancêtres du nœud courant, ce qui inclue les parents
+jusqu'au nœu racine.
+ 	
+@item ancestor-or-self
+Représente le nœud courant ou ses ancêtres.
+ 	
+@item attribute
+Représente les attributs du nœud courant.
+
+@item child
+Représentent les enfants du nœud courant.
+
+@item descendant
+Représente les descendants du nœud courant. Les descendants incluent les
+enfants du nœud courant jusqu'à la dernière feuille de l'arbre.
+
+@item descendant-or-self
+Représente le nœud courant et ses descendants.
+
+@item following
+Représente tous les nouds qui viennent après le nœud courant.
+
+@item following-sibling
+Représente les prochains nœuds jumeaux par rapport au context du nœud en
+cours. Les jumeaux sont au même niveau que le nœud courant et partagent
+le même parent.
+
+@item namespace
+Représente l'espace de noms du nœud courant.
+
+@item parent
+Représente le parent du nœud courant.
+
+@item preceding
+Représente toutes les nœuds qui viennent le nœud courant (i.e. avant le
+tag d'ouverture).
+
+@item self
+Représente le nœud courant.
+@end table
+
+Ces commandes s’accolent à un nom de chemin et on les séparre de leur
+argument avec  double double-points @code{::} de leur argument.
+
+@example
+AxesName :: current node[predicate]
+@end example
+
+Sur un exemple, on se donne un morceau XML
+
+@example
+set student [string trim @{
+<?xml version = "1.0"?>
+<?xml-stylesheet type = "text/xsl" href = "students.xsl"?>
+<class>
+   <!-- Comment: This is a list of student -->
+   <student rollno = "393">
+      <firstname>Dinkar</firstname>
+      <lastname>Kad</lastname>
+      <nickname>Dinkar</nickname>
+      <marks>85</marks>
+   </student>
+   <student rollno = "493">
+      <firstname>Vaneet</firstname>
+      <lastname>Gupta</lastname>
+      <nickname>Vinni</nickname>
+      <marks>95</marks>
+   </student>
+   <student rollno = "593">
+      <firstname>Jasvir</firstname>
+      <lastname>Singh</lastname>
+      <nickname>Jazz</nickname>
+      <marks>90</marks>
+   </student>
+</class>
+@}]
+
+set STUDENT [dom parse $student]
+@end example
+
+On peut par exemple récuperer la commentaire de la façon suivante.
+
+@example
+[$STUDENT selectNodes "/class/student/preceding-sibling::comment()"] asText
+@result{}  Comment: This is a list of student 
+@end example
+
+Pour retrouver tous les prénoms, on peut faire la boucle suivante.
+
+@example
+foreach N [$STUDENT selectNodes "/class/student/child::firstname"] @{
+  puts [$N asText]
+@}
+
+@result{}
+Dinkar
+Vaneet
+Jasvir
+@end example
+

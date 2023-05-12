@@ -1,0 +1,525 @@
+@c -*- coding: utf-8-unix; mode: texinfo; mode: auto-fill; ispell-local-dictionary: "fr_FR" -*-
+@c typographie française :    «   » … ’
+
+
+@c On vérifie les dictionnaires diponibles avec la commande : hunspell -D
+
+@c Usage dom <subCommand> <args>, where subCommand can be:    
+@c     parse ?-keepEmpties? ?-channel <channel> ?-baseurl <baseurl>?  
+@c         ?-feedbackAfter <#Bytes>?                    
+@c         ?-feedbackcmd <cmd>?                         
+@c         ?-externalentitycommand <cmd>?               
+@c         ?-useForeignDTD <boolean>?                   
+@c         ?-paramentityparsing <none|always|standalone>
+@c         ?-simple? ?-html? ?-html5? ?-json?           
+@c         ?-jsonmaxnesting <#nr>?                      
+@c         ?-jsonroot name?                             
+@c         ?<xml|html|json>? ?<objVar>?                 
+@c     createDocument docElemName ?objVar?              
+@c     createDocumentNS uri docElemName ?objVar?        
+@c     createDocumentNode ?objVar?                      
+@c     attachDocument domDoc ?objVar?                   
+@c     detachDocument domDoc                            
+@c     createNodeCmd ?-returnNodeCmd? ?-tagName name? ?-jsonType jsonType? ?-namespace URI? (element|comment|text|cdata|pi)Node cmdName 
+@c     setStoreLineColumn ?boolean?                     
+@c     setNameCheck ?boolean?                           
+@c     setTextCheck ?boolean?                           
+@c     setObjectCommands ?(automatic|token|command)?    
+@c     isCharData string                                
+@c     isComment string                                 
+@c     isCDATA string                                   
+@c     isPIValue string                                 
+@c     isName string                                    
+@c     isQName string                                   
+@c     isNCName string                                  
+@c     isPIName string                                  
+@c     featureinfo feature                              
+
+
+
+@node Les commandes liées au modèle DOM
+@chapter Les commandes liées au modèle DOM
+
+Le DOM ("Document Object Model") est un modèle qu'on définit pour toute
+une classe de document et qui définit comment on obtient, on ajoute ou
+on retire un élément à un document de cette classe.
+
+Cette objet est chargé avec le chargement du paquet.
+
+@findex tdom
+@example
+package require tdom
+@end example
+
+
+La suite seront des méthodes attachées à l'objet @code{dom}.
+
+@findex dom
+@example
+dom method ?arg arg ...?
+@end example
+
+
+
+@node Analyse d'une chaîne ('dom parse').
+@section Analyse d'une chaîne (@code{dom parse}).
+
+La commande @code{dom parse} analyse une chaîne, qui doit se conformer
+au règle d'écriture XML pour contruire ensuite l'arbre DOM correspondant
+en mémoire.
+
+@findex dom parse
+@example
+dom parse ?options? ?data?
+@end example
+
+Cette commande renvoie le lien vers un objet Tcl ou le met dans
+@code{data} si cet argument est donné.
+
+Par exemple :
+@example
+dom parse $xml doc
+$doc documentElement root
+@end example
+
+Cette commande analyse donc la chaîne @code{$xml} contenant du code
+@code{XML} pour créer l'arbre @code{DOM} en mémoire et l'assigner à un
+objet dont l'adresse est stockée dans @code{doc}. Quand on alimente
+l'objet @code{doc}, l'arbre @code{DOM} en mémoire est mis à jour.
+
+On peut aussi écrire sous la forme.
+
+@example
+set document [dom parse $xml]
+set root [$document documentElement]
+@end example
+
+On peut libérer la mémoire et effacer l'objet avec
+
+@example
+$document delete
+@end example
+
+ou
+
+@example
+rename $document ""
+@end example
+   
+Voici un exemple simple, qui utilise la méthode @code{asXML} que nous
+verrons plus loin et qui permet de ré-écrire la chaîne XML à partir de
+l'arbre DOM en mémoire. 
+
+@example
+set xml @{<text>Ceci est un petit texte.</text>@}
+dom parse $xml doc
+$doc asXML
+@result{} <text>Ceci est un petit texte.</text>
+@end example
+
+
+On peut utiliser les options suivantes au moment de cette analyse.
+
+@table @code
+@item -simple
+Utilise un analyseur rapide, mais non complètement conforme aux
+recommendations @code{XML}. Ceci devrait doubler la vitesse d'analyse
+(voir la documentation). 
+@c :https://docs.activestate.com/activetcl/8.6/tcl/tdom/dom.html
+
+@item -html
+Utilise un analyseur @code{HTML} rapide.
+
+@item -keepEmpties
+Conserve les nœuds texte vide, qui sinon sont enlevés au moment de
+l'analyse.
+
+        
+@item -channel <channel-ID>
+Spécifie le canal de lecture, l'encodage sera traduit en utf-8 avant
+l'analyse.
+        
+@item -baseurl <baseURI>
+L'@code{url} @code{baseURI} est utilisée comme base du document. Toutes
+les références externes du document seront résolues relativement à
+cet @code{baseURI}. 
+        
+@item -feedbackAfter <#bytes>
+La commande tcl @code{::dom::domParseFeedback} est évaluée après avoir
+analyser chaque paquet de @code{#bytes} octets. Il faut avoir crée une
+procédure @code{::dom::domParseFeedback} sinon une erreur sera
+levée. L'appel à cette procédure ne se fait pas exactement à l'octet
+près, mais au premier élément arrivant après ce paquet de @code{#bytes}
+octet.
+       
+@item -externalentitycommand <script>
+Si cette option est spécifiée, le scipt donné sera appelé pour chaque
+entité extern du document. La commande qui sera évaluée sera consitutée
+de ce script avec trois arguments : l'@code{uri} de base,
+l'identification du système et l'identifiant public de cet
+entité. L'@code{uri} et l'identifiant public peuvent être des listes
+vides. Le script doit retourner une liste tcl à trois éléments. Le
+premier doit signaler comment l'entité externe doit être retournée au
+processeur. Les types accepté sont "string" et "channel". Le second
+élément de la liste doit être une @code{uri} (en adresse absolue) de
+l'entité externe à analyser. Le troisième élement de la liste sont des
+données qui sont soit celle qui sont lues de l'entité externe comme une
+@code{string} ou le nom du canal @code{channel}. Si le script retourne
+un canal tcl, il ne le referme pas. Ceci doit être fait séparemment.
+
+@item -useForeignDTD <boolean>
+If <boolean> is true and the document does not have an external subset,
+the parser will call the @code{-externalentitycommand} script with empty
+values for the systemId and publicID arguments. Pleace notice, that, if
+the document also doesn't have an internal subset, the
+@code{-startdoctypedeclcommand} and @code{-enddoctypedeclcommand}
+scripts, if set, are not called. The -useForeignDTD respects
+        
+@item -paramentityparsing <always|never|notstandalone>
+The @code{-paramentityparsing} option controls, if the parser tries to
+resolve the external entities (including the external DTD subset) of the
+document, while building the DOM tree. @code{-paramentityparsing}
+requires an argument, which must be either "always", "never", or
+"notstandalone". The value "always" means, that the parser tries to
+resolves (recursively) all external entities of the XML source. This is
+the default, in case -paramentityparsing is omitted. The value "never"
+means, that only the given XML source is parsed and no external entity
+(including the external subset) will be resolved and parsed. The value
+"notstandalone" means, that all external entities will be resolved and
+parsed, with the execption of documents, which explicitly states
+standalone="yes" in their XML declaration.
+
+@end table
+
+
+
+@node Création de document ('dom createDocument').
+@section Création de document (@code{dom createDocument}).
+
+On peut aussi créer un document avec la commande suivante.
+
+@findex dom createDocument
+@example
+dom creatDeocument docElemName ?objVar?
+@end example
+
+Cette commande crée un objet @code{DOM} avec un élément nœud nommé
+@code{docElemName}. L'option @code{objVar} peut être soit la variable où
+sera stockée l'adresse de l'objet ou les options vues précédemment.
+
+Voici une première façon de constuire ce premier objet.
+
+@example
+dom createDocument node doc
+$doc asXML
+@result{} <node/>
+$doc delete
+@end example
+
+Et ici en utilisant une option.
+
+@example
+set doc [dom createDocument node -simple]
+$doc asXML
+@result{} <node/>
+$doc delete
+@end example
+
+
+@node Création d'un document dans un espace de nom
+@section Création d'un document dans un espace de nom
+
+On peut aussi créer un arbre @code{DOM} à un élement comme précédement
+en utilisant un espace de nom. Comme en Tcl, les espaces de noms en
+@code{XML} servent à éviter les collisions d'appellations. Par contre,
+on remplace les @code{::} utilisés pour les espaces de noms de Tcl par
+@code{:}. Pour que le code @code{XML} soit valide, il faut que les
+espaces de noms soient déclarés avant leur utilisation. Ceci est fait
+soit comme un attribut @code{xmlns:ns="uri"} au niveau de la racine, où
+@code{uri} est le nom unique de l'espace de nom, souvent une adresse
+internet.
+
+Dans l'example ci-dessous, nous déclarons deux espaces de noms, @code{h}
+et @code{f} dans la racine et ils sont ensuite utilisés pour que le
+marqueur @code{table} soit différencié entre @code{h.table} et
+@code{f.table}. 
+
+@example
+<root xmlns:h="http://www.w3.org/TR/html4/"
+      xmlns:f="https://www.w3schools.com/furniture">
+
+<h:table>
+  <h:tr>
+    <h:td>Apples</h:td>
+    <h:td>Bananas</h:td>
+  </h:tr>
+</h:table>
+
+<f:table>
+  <f:name>African Coffee Table</f:name>
+  <f:width>80</f:width>
+  <f:length>120</f:length>
+</f:table>
+
+</root> 
+@end example
+
+Une autre façon aurait été d'écrire ces espaces de noms juste avant leur
+utilisation. 
+
+@example
+<root>
+
+<h:table xmlns:h="http://www.w3.org/TR/html4/">
+  <h:tr>
+    <h:td>Apples</h:td>
+    <h:td>Bananas</h:td>
+  </h:tr>
+</h:table>
+
+<f:table xmlns:f="https://www.w3schools.com/furniture">
+  <f:name>African Coffee Table</f:name>
+  <f:width>80</f:width>
+  <f:length>120</f:length>
+</f:table>
+
+</root> 
+@end example
+
+
+Pour créer ainsi un document contenant déjà un espace de nom, on utilise
+la fonction @code{dom createDocumentNS} et on ajouter le préfixe au nom
+de l'élément.
+
+@findex dom createDocumentNS
+@example
+dom createDocumentNS uri docElemName ?objVar?
+@end example
+
+Sur un exemple
+
+@example
+set DOC [dom createDocumentNS \
+             "urn:oasis:names:tc:opendocument:xmlns:text:1.0" text]
+$DOC asXML
+@result{}
+<office:text xmlns:office="urn:oasis:names:tc:opendocument:xmlns:text:1.0"/>
+@end example
+
+
+
+
+Ensuite on ajoute des nœuds avec les commandes
+
+@example
+dom createDocumentNode ?objVar?
+@end example
+
+Crée un nouveau document DOM vide sans élément.
+
+
+@node Spécifier l'encodage ('dom setResultEncoding')
+@section Spécifier l'encodage du document (@code{dom setResultEncoding})
+
+S'il y a besoin, on peut spécifier l'encodage avec
+
+@findex dom setResultEncoding
+@example
+dom setResultEncoding ?encodingName?
+@end example
+
+Mais le conseil est maintenant de rester en utf-8 (voir la documentation
+si besoin).
+
+
+@node Commande Tcl générant des nœuds ('dom createNodeCmd')
+@section Commande Tcl générant des nœuds (@code{dom createNodeCmd})
+
+@findex dom createNodeCmd
+@example
+dom createNodeCmd ?-returnNodeCmd? \(element|comment|text|cdata|pi)Node \
+                  commandName
+@end example
+
+Cette méthode de @code{dom} crée une commande Tcl, qui à son tour
+génèrera des nœuds. Les commandes tcl qui sont crées de cette facçon ne
+sont disponibles qu'à l'intérieur d'un script donné la méthode
+@code{domNode appendFromScript} qui est vue plus loin. Si une
+commande crée par ce biais est invoquée dans un autre contexte, cela
+génèrera une erreur. La commande remplace toute autre commande pouvant
+avoir ce nom. Si cette commande inclue la référence à un espace de nom
+dans son nom, elle sera crée dans cet espace de noms.
+
+Si une telle commande est invoquée dans un script donné comme un
+argument de la méthode @code{domNode appendFromScript}, elle crée
+des nouveau nœuds qui sont ajoutés à ce nœud, à la fin de la liste des
+enfants de ce nœud. Si l'option @code{-returnNodeCmd} est donnée, la
+commande retourne le nœud créé comme une commande Tcl. Si cette option
+est omise, la commande ne renvoie rien. Chaque commande crée toujours le
+même type de nœuds. Le type de nœud créé est déterminé par le premier
+argument de @code{createNodeCmd}. La syntaxe de la commande créée dépend
+du type de nœud qu'elle construit.
+
+Si le premier argument de la méthode est @code{elementNode}, la commande
+scréée crééra un nœud élément. Le nom du marqueur du nœud crée est
+@code{commandName} sans espaces dans le nom. La syntaxe de la commande
+créée est :
+
+@example
+elementNodeCmd ?attributeName attributeValue ...? ?script?
+elementNodeCmd ?-attributeName attributeValue ...? ?script?
+elementNodeCmd name_value_list script
+@end example
+
+Cette syntaxe de commande offre trois façon de spécifier les attributs
+de l'élément résultant. Ils peuvent être spécifié avec la paire d'arguments
+@code{attributeName attributeValue}  ou dans le style option avec la
+paire d'arguments @code{-attriubteName attributeValue} (le caractère '-'
+n'est qu'un sucre syntaxique et est ensuite enlevé) ou encore comme un
+liste Tcl avec des éléments qui sont interprétés comme des paires de nom
+d'attributs et de valeurs correspondantes. Les noms d'attributs dans
+cette liste seront précédés du caractère '-' qui sera ensuite enlevé.
+
+Chaque script @code{elementNodeCmd} accepte un script Tcl optionel comme
+dernier argument. Ce script est évalué récursivement quand le script
+@code{appendFromScript} avec le nœud crée par l'élément parent
+@code{elementNodeCmd} de touts les nœuds crées par le script.
+
+Si le premier argument de la méthod est @code{textNode}, la commande
+créera un nœud texte. La syntaxe de la commande crée est :
+
+@example
+textNodeCmd ?-disableOutputEscaping? data
+@end example
+
+Si l'option @code{-disableOutputEscaping} est utilisé, l'échappement de
+l'esperluette (&) et du signe inférieur (<) sont anulés dans la donnée
+entrée. Il faut utiliser cette option avec attention.
+
+Si le premier argument de la méthode est @code{commentNode} ou
+@code{cdataNode}, la commande créera un nœud commnetaire ou CDATA. La
+syntaxe de commande est :
+
+@example
+nodeCmd data
+@end example
+
+Si le premier argument de la méthode est @code{piNode} la commande
+créera un nœud de processus d'instruction. La syntaxe de commande est :
+
+@example
+piNodeCmd target data
+@end example
+
+
+@node Réglages généraux
+@section Réglages généraux
+
+Les fonctions suivantes permettent de faire des réglages généraux.
+
+
+@subsection Conserver les positions
+
+@findex dom setStoreLineColumn
+@example
+dom setStoreLineColumn ?boolean?
+@end example
+
+Si cet commande est mise à vrai (@code{t}), les nœuds conserveront les numéros
+de ligne et de colonne dans le document XML après analyse. Par défaut,
+ceci n'est pas fait.
+
+
+@subsection Vérifier les noms
+
+@example
+dom setNameCheck ?boolean?
+@end example
+
+Si cette commande est mise à vrai (@code{t}), pour chaque méhtode qui
+uilisera un nom XML, une vérification complète sera réalisée. Pour les
+commandes crées avec la méthode @code{createNodeCmd} dans un contexte
+@code{appendFromScript} le status donné au momnet de la création
+décidera. Si @code{NameCheck} est vrai au momnet de la création, la
+commande vérifiera les arguments, sinon elle ne le fera pas. La méthode
+@code{setNameCheck} règle ce drapeau. Elle retourne le status courant de
+@code{NameCheck}. La valeur par défaut de @code{NameCheck} est vraie.
+
+
+@subsection Vérifier les textes
+
+@example
+dom setTextCheck ?boolean?
+@end example
+
+If TextCheck is true, every command which expects XML Chars, a comment,
+a CDATA section value or a processing instructing value will check, if
+the given string is valid according to his production rule. For commands
+created with the createNodeCmd method to be used in the context of
+appendFromScript the status of the flag at creation time decides. If
+TextCheck is true at creation time, the command will check his
+arguments, otherwise not.The setTextCheck method set this flag. It
+returns the current TextCheck flag state. The default state for
+TextCheck is true.
+
+
+@subsection Régler les objets comme des commande tcl
+
+@example
+dom setObjectCommands ?(automatic|token|command)?
+@end example
+
+Contrôle si les documents et les nœuds sont crées comme des commandes
+tcl ou des token à utiliser avec les commandes @code{domNode} ou
+@code{domDoc}. Si le mode est @code{automatic}, alors les méthodes
+utilisant une commande créeront des commandes tcl et les méthodes
+utilisées avec @code{doc} ou @code{node} créeront les tokens. Si la mode
+est @code{command} alors une commande tcl sera crée. Si le mode est
+@code{token} alors se seront toujours des token qui seront créés. La
+méthode retourne le mode courant. Cette méthode est encore expérimentale
+
+
+@node Commandes de vérification
+@section Commandes de vérification
+
+Voici maintenant plusieurs commandes qui permettent de faire des
+vérifications sur des objets en rapport avec la DOM.
+
+@table @code
+@item dom isName name
+Retourne 1, si @code{name} est un nom XML valable selon la production 5
+de la recommendation XML 1.0. Ceci signifie, que ce nom est est un
+élément XML ou un nom d'attribut valable. Sinon, la commande retourne 0.
+
+@item dom isPIName name
+Retourne 1, si @code{name} est une instruction cible en XML selon la
+production 17 de la recommendation XML 1.0. Sinon la commande retourne 0.
+
+@item dom isNCName name
+Retourne 1, si @code{name} est un NCName selon la production 4 de la
+recommendation sur les espace de noms XML. Sinon la commande retourne 0.
+
+@item dom isQName name
+Retourne 1, si @code{name} est un QName selon la production 6 de la
+recommendation sur les espace de noms XML. Sinon la commande retourne 0.
+
+@item dom isCharData string
+Retourne 1 si chaque caractère de la chaîne @code{string} est un
+caractère XML accepté selon le production 2 de la recommendation XML
+1.0. Sinon la commande retourne 0.
+
+@item dom isComment string
+Retourne 1 si la chaîne @code{string} est un commentaire valide pour la
+production 15 de la recommendation XML 1.0. Sinon la commande retourne 0.
+
+@item dom isCDATA string
+Retourne 1 si la chaîne @code{string} est valide pour la production 20
+de la recommendation XML 1.0. Sinon la commande retourne 0.
+
+@item dom isPIValue string
+Retourne 1 si la chaîne @code{string} est valable selon la production 16
+de la recommendation XML 1.0. Sinon la commande retourne 0.
+@end table
+
+
+
