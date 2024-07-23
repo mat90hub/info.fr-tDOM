@@ -22,7 +22,7 @@
 @end direntry
 
 
-@set TITLE Notes glanées sur tDOM
+@set TITLE Notes sur tDOM
 
 @set xref-automatic-section-title
 
@@ -67,16 +67,16 @@
 @node Introduction à tDOM
 @chapter Introduction à tDOM
 
-@section Une bibliothèque pour gérer des documents XML
+@section Une extension Tcl pour gérer des documents XML
 
-Je rassemble ici les notes sur l'utilisation de l'extension tDOM en Tcl.
+Je rassemble ici mes notes sur l'utilisation de l'extension tDOM en Tcl.
 Cette extension permet de traiter un fichier @code{xml}, que ce soit
 pour lire un fichier @code{xml} ou pour en écrire un.
 
 Le langage XML est constitué de règles qui permettent de coder une
-grande variété de documents : des pages html, des fichiers en format de
-texte enrichis (type Word ou LibreOffice), des fichiers pour tableurs…
-En pratique on restreint ces règles pour le contexte d’une application
+grande variété de documents : des pages html, des fichiers texte
+formaté (type Word ou LibreOffice), des fichiers pour tableurs…  En
+pratique on restreint ces règles pour le contexte d’une application
 donnée en se donnant un modèle de document appelé DOM ("Document Object
 Model"). Ce modèle précise un sous-ensemble de règles XML pour les
 documents qui seront traités par cette applications (un navigateur
@@ -87,20 +87,22 @@ ou docx, un tableur lisant des fichiers xlsx ou ods).
 @cindex dom
 @cindex domdoc
 @cindex domnode
-L'extension tDOM déclare d'abord les éléments qui constitueront
-le modèle de document choisi. Dans le formalisme choisi par cette
+L'extension tDOM déclare d'abord les éléments qui constitueront le
+modèle de document choisi. Dans le formalisme choisi par cette
 extension, ce sera un objet @code{TclOO} dit objet @code{dom}. Sur la
-base de cet objet de modèle, on crée ensuite un objet document
-@code{dom} (@code{domdoc}). Ce document XML est lui même constitué
-d'éléments imbriqués, qu'on appelle ici des nœuds (@code{domnode}).
+base de cet objet contenant le modèle, on crée ensuite un objet pour
+contenir le document @code{dom} (@code{domdoc}). Ce document XML est lui
+même constitué d'éléments imbriqués, qu'on appelle ici des nœuds
+(@code{domnode}).
 
 @cindex arbre DOM
-L'élément englobant tous les autres est l'élément racine. Il contient
-ensuite des éléments enfants, qui contiendront eux même leurs
-descendants. On parle d'arbre DOM avec l'analogie d'un arbre
-généalogique (avec les ancètres au niveau supérieur). Des commandes vont
-permettre de naviguer dans cette arbre. Il faut retenir le vocabulaire
-propre à la norme XML et qui est réutilisé par tDOM.
+Parmi ces éléments objets, il en est le parent de tous les autres. On
+l'appelle l'élément racine. Il contient ensuite des éléments enfants,
+qui contiendront eux même leurs descendants. On parle d'arbre DOM avec
+l'analogie d'un arbre généalogique (avec les ancètres au niveau
+supérieur). Les commandes vont permettre de naviguer dans cette
+arbre. Il faut retenir le vocabulaire propre à la norme XML et qui est
+réutilisé par tDOM.
 
 @image{./images/navigate, png}
 

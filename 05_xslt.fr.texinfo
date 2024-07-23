@@ -18,8 +18,8 @@
 @chapter Utiliser XLST
 
 
-@node La méthode xslt sur les objets nœuds
-@section La méthode xslt sur les objets nœuds
+@node La methode xslt sur les objets noeuds
+@section La méthode xslt sur les objets noeuds
 
 La méthode @code{xslt} s'applique à l'objet nœud et permet de
 transformer du code XML selon un schéma donné. C'est utilisé par exemple

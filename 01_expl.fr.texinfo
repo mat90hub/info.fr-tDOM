@@ -7,27 +7,28 @@
 @node Premier exemple
 @chapter Premier exemple
 
-@section Chargement de tDOM et d'un exemple XML en mémoire
+@section Chargement d'un texte XML en mémoire
 
-Nous allons commencer par la lecture simple d'un morceau de XML pour
+Nous allons commencer par la lecture simple d'un texte en XML pour
 montrer l'action des commandes principales de la bibliothèque
 tDOM. Puis nous montrerons comment modifier ou ajouter des nœuds ou
 même construire un document complet, élément par élément.
 
 La bibliothèque @code{tDOM} s'installe sur le système au travers des
 dépôts Linux ou un autre installateur qui vous est familier. Ensuite, on
-le charge avec la commande classique pour les paquets.
+le charge avec la commande classique pour les paquets Tcl.
 
 @findex tdom
 @example
 package require tdom
 @end example
 
-Nous commençons ici par déclarer un morceau XML simple, qui nous
-permettra d'experimenter les commandes de relecture. Ce morceau est
-entré dans Tcl sous la forme d’une chaîne de caractères. Ce peut
-être le résultat de la lecture d'un fichier XML, qui n’est pas détaillé
-ici (voir l’aide Tcl sur la lecture des fichiers texte).
+Nous commençons ici par déclarer un texte XML simple dans une variable
+@code{doc}, qui nous permettra d'expérimenter les commandes de
+relecture. Ce morceau est entré dans Tcl sous la forme d’une chaîne de
+caractères. Ce peut être le résultat de la lecture d'un fichier XML, qui
+n’est pas détaillé ici (voir l’aide Tcl sur la lecture des fichiers
+texte).
 
 @example
 set doc [string trim @{
@@ -92,13 +93,13 @@ $DOC asXML
 @end example
 
 On remarquera que l'affichage est ici fait avec un formattage
-élémentaire (ces formattages peuvent ensuite se régler plus finement,
+élémentaire (ces formattages peuvent ensuite être réglés plus finement,
 comme nous le verrons avec les chapitres sur XSLT).
 
 Cette commande d'affichage est utile, mais quand on code, on veut
-pouvoir accéder à un élément particulier du code XML. Pour faire cette
-analyse, il fait alors descendre au niveau des nœuds du document et
-ensuite pouvoir parcourir l'arbre XML. Les nœuds sont à leur tour des
+pouvoir accéder à un élément particulier du document XML. Pour faire
+cette analyse, il faut alors descendre au niveau des nœuds du document
+et ensuite pouvoir parcourir l'arbre XML. Les nœuds sont à leur tour des
 objets, que l'on nommera génériquement @code{domnode} dans ce
 document. La commande @code{$docnode documentElement} récupère le nœud
 racine d'un document.
@@ -109,7 +110,7 @@ set NODE [$DOC documentElement]
 @end example
 
 On peut appliquer la méthode de relecture à cet objet nœud avec
-le commande @code{$domnode asXML}, ce qui donne ici l'intégralité de
+la commande @code{$domnode asXML}, ce qui donne ici l'intégralité de
 l'arbre car nous sommes sur sa racine.
 
 Nous pouvons maintenant utiliser les méthodes méthodes liées aux nœuds
@@ -314,7 +315,6 @@ son existence, ici l'attribut @code{type} qui existe pour chaque élément
 
 Ce passage @code{[$$NN @@type]} peut être remplacé par
 @code{[$NN getAttribut type]}, mais c'est plus long et moins élégant.
-
 
 En utilisant des fonctionalités plus avancées de XPath, voici une autre
 solution qui sélectionne les nœuds @code{name} en fonction de la valeur
